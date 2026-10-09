@@ -1,0 +1,665 @@
+/* ==========================================================================
+   AGENT BUDGET SENTINEL — AVANT-GARDE OBSIDIAN DESIGN SYSTEM
+   Neal Frazier Tech (@1nc0gn30) • NullAI Platform
+   ========================================================================== */
+
+:root {
+  --bg-void: #08080B;
+  --bg-card: #101118;
+  --bg-card-subtle: #161722;
+  --border-card: rgba(212, 175, 55, 0.22);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  
+  --gold: #D4AF37;
+  --gold-glow: rgba(212, 175, 55, 0.4);
+  --gold-dim: #997E25;
+  
+  --emerald: #10B981;
+  --emerald-glow: rgba(16, 185, 129, 0.35);
+  
+  --ruby: #EF4444;
+  --ruby-glow: rgba(239, 68, 68, 0.4);
+  
+  --amber: #F59E0B;
+  --cyan: #38BDF8;
+  
+  --text-main: #F3F4F6;
+  --text-muted: #9CA3AF;
+  --text-dim: #6B7280;
+  
+  --font-sans: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', Menlo, monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  background-color: var(--bg-void);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Background Aurora Mesh */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 600px;
+  background: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.12), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* ==========================================================================
+   SALES FUNNEL BANNER (Above-the-Fold Sovereign Conversion Architecture)
+   ========================================================================== */
+.sales-banner {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.14) 0%, rgba(16, 17, 24, 0.95) 100%);
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  padding: 0.85rem 1.25rem;
+  margin: 1rem 0 1.5rem 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  box-shadow: 0 4px 24px rgba(212, 175, 55, 0.15);
+}
+
+.sales-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.founding-badge {
+  background: var(--gold);
+  color: #000;
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sales-banner-text {
+  font-size: 0.95rem;
+  color: var(--text-main);
+}
+
+.price-strike {
+  text-decoration: line-through;
+  color: var(--text-muted);
+  margin-right: 0.35rem;
+}
+
+.price-current {
+  color: var(--gold);
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+
+.sales-banner-right {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   BUTTON COMMODITIES & TOUCH TARGETS
+   ========================================================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  min-height: 44px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid transparent;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #D4AF37 0%, #B89628 100%);
+  color: #08080B;
+  box-shadow: 0 2px 10px rgba(212, 175, 55, 0.35);
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.5);
+}
+
+.btn-solana {
+  background: linear-gradient(135deg, #9945FF 0%, #14F195 100%);
+  color: #FFFFFF;
+}
+.btn-solana:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(153, 69, 255, 0.4);
+}
+
+.btn-outline {
+  background: transparent;
+  border-color: var(--border-subtle);
+  color: var(--text-main);
+}
+.btn-outline:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.btn-danger {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: var(--ruby);
+  color: #FCA5A5;
+}
+.btn-danger:hover {
+  background: var(--ruby);
+  color: #FFF;
+}
+
+.btn-success {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: var(--emerald);
+  color: #6EE7B7;
+}
+.btn-success:hover {
+  background: var(--emerald);
+  color: #000;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--gold);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+/* ==========================================================================
+   HEADER & NAVIGATION
+   ========================================================================== */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.brand-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.brand-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+}
+
+.brand-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #FFF;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.brand-version {
+  font-size: 0.72rem;
+  background: rgba(212, 175, 55, 0.15);
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Status Pills */
+.status-pill {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.status-closed {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10B981;
+  border: 1px solid var(--emerald);
+  box-shadow: 0 0 12px var(--emerald-glow);
+}
+.status-closed::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10B981;
+}
+
+.status-warn {
+  background: rgba(245, 158, 11, 0.12);
+  color: #F59E0B;
+  border: 1px solid var(--amber);
+}
+.status-warn::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #F59E0B;
+}
+
+.status-tripped {
+  background: rgba(239, 68, 68, 0.18);
+  color: #EF4444;
+  border: 1px solid var(--ruby);
+  box-shadow: 0 0 16px var(--ruby-glow);
+  animation: pulse-trip 1.5s infinite;
+}
+.status-tripped::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #EF4444;
+}
+
+@keyframes pulse-trip {
+  0% { box-shadow: 0 0 8px var(--ruby-glow); }
+  50% { box-shadow: 0 0 20px var(--ruby); }
+  100% { box-shadow: 0 0 8px var(--ruby-glow); }
+}
+
+.badge-pro {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.05));
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  font-size: 0.75rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   BENTO GRID LAYOUTS & CARDS
+   ========================================================================== */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.col-4 { grid-column: span 4; }
+.col-6 { grid-column: span 6; }
+.col-8 { grid-column: span 8; }
+.col-12 { grid-column: span 12; }
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 1.35rem;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.card:hover {
+  border-color: var(--border-card);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Telemetry Gauges */
+.metric-large {
+  font-family: var(--font-mono);
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #FFF;
+  letter-spacing: -0.02em;
+}
+
+.metric-sub {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.progress-container {
+  width: 100%;
+  height: 10px;
+  background: var(--bg-card-subtle);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 1rem 0 0.5rem 0;
+  border: 1px solid var(--border-subtle);
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--emerald);
+  transition: width 0.4s ease, background 0.4s ease;
+}
+
+/* Circuit Reason Banner */
+.trip-reason-banner {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid var(--ruby);
+  color: #FCA5A5;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  display: none;
+}
+
+/* Form Controls */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+}
+
+.form-control {
+  width: 100%;
+  background: var(--bg-void);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 0.6rem 0.85rem;
+  color: #FFF;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  min-height: 44px;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+/* Tables */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+th {
+  padding: 0.75rem 0.85rem;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+td {
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.text-mono { font-family: var(--font-mono); }
+.text-gold { color: var(--gold); }
+.font-bold { font-weight: 700; }
+.empty-cell { text-align: center; color: var(--text-dim); padding: 2rem 1rem; }
+
+.badge {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 700;
+}
+.badge-success { background: rgba(16, 185, 129, 0.15); color: #10B981; }
+.badge-danger { background: rgba(239, 68, 68, 0.15); color: #EF4444; }
+
+/* ==========================================================================
+   FROSTED GLASS BLUR PAYWALL & LOCK OVERLAYS
+   ========================================================================== */
+.paywall-wrapper {
+  position: relative;
+}
+
+.paywall-blurred {
+  filter: blur(6px);
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.45;
+  transition: filter 0.4s ease, opacity 0.4s ease;
+}
+
+.paywall-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 8, 11, 0.75);
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--gold);
+  border-radius: 14px;
+  z-index: 10;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.paywall-icon {
+  font-size: 2.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.paywall-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--gold);
+  margin-bottom: 0.5rem;
+}
+
+.paywall-desc {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  max-width: 480px;
+  margin-bottom: 1.25rem;
+}
+
+/* ==========================================================================
+   MODAL DIALOG (Pro Paywall Matrix)
+   ========================================================================== */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.modal-card {
+  background: #12131C;
+  border: 1px solid var(--gold);
+  border-radius: 16px;
+  max-width: 560px;
+  width: 100%;
+  padding: 2rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(212, 175, 55, 0.2);
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+  line-height: 1;
+}
+.modal-close:hover { color: #FFF; }
+
+.matrix-list {
+  list-style: none;
+  margin: 1.25rem 0;
+}
+
+.matrix-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  color: var(--text-main);
+  margin-bottom: 0.6rem;
+}
+
+.matrix-check {
+  color: var(--emerald);
+  font-weight: 800;
+}
+
+/* Footer Attribution */
+.footer {
+  text-align: center;
+  padding: 3rem 0 2rem 0;
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 3rem;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+.footer a {
+  color: var(--gold);
+  text-decoration: none;
+}
+.footer a:hover {
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN (375px Mobile, 768px Tablet, 1280px+ Desktop)
+   ========================================================================== */
+@media (max-width: 900px) {
+  .col-4, .col-6, .col-8 {
+    grid-column: span 12;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 0.5rem;
+  }
+  .card {
+    padding: 1rem 0.75rem;
+  }
+  .sales-banner {
+    padding: 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .sales-banner-right {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  #proStatusBadge {
+    display: none; /* Hide secondary badge on mobile to prevent overflow */
+  }
+  .metric-large {
+    font-size: 1.8rem;
+  }
+  .modal-card {
+    padding: 1.25rem;
+  }
+}

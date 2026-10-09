@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Budget Sentinel — Autonomous LLM Token Cost Circuit Breaker</title>
+  <meta name="description" content="Autonomous zero-dependency spending guardrail and real-time token cost circuit breaker for AI agents. Eliminate runaway API bills, auto-kill infinite loops, and enforce hard spending fences.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  
+  <!-- OpenGraph Meta Tags -->
+  <meta property="og:title" content="Agent Budget Sentinel — Autonomous LLM Token Cost Circuit Breaker">
+  <meta property="og:description" content="Autonomous zero-dependency spending guardrail and real-time token cost circuit breaker for AI agents. Eliminate runaway API bills and enforce hard spending fences.">
+  <meta property="og:url" content="https://agent-budget-sentinel.nullai.tech/">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://agent-budget-sentinel.nullai.tech/assets/og-budget-sentinel.png">
+  
+  <!-- Twitter Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@1nc0gn30">
+  <meta name="twitter:creator" content="@1nc0gn30">
+  <meta name="twitter:title" content="Agent Budget Sentinel — Autonomous LLM Token Cost Circuit Breaker">
+  <meta name="twitter:description" content="Zero-dependency spending guardrail & emergency circuit breaker for AI agents. Auto-kill infinite loops with zero cloud overages.">
+  <meta name="twitter:image" content="https://agent-budget-sentinel.nullai.tech/assets/og-budget-sentinel.png">
+
+  <!-- AEO & SEO Schema.org Graph -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "Agent Budget Sentinel",
+        "url": "https://agent-budget-sentinel.nullai.tech/",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Linux, macOS, Windows",
+        "offers": {
+          "@type": "Offer",
+          "price": "19.00",
+          "priceCurrency": "USD",
+          "availability": "https://schema.org/InStock",
+          "url": "https://buy.stripe.com/7sI7sA8hM2X8eFG8ww"
+        },
+        "creator": {
+          "@type": "Organization",
+          "name": "Neal Frazier Tech",
+          "url": "https://nullai.tech"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How does Agent Budget Sentinel prevent runaway agent billing?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Agent Budget Sentinel operates an inline HTTP proxy and circuit breaker state machine. Before forwarding calls to LLM providers, it estimates prompt cost and tracks cumulative spend. When spending reaches the user's hard budget ceiling or triggers an extreme velocity spike, it trips immediately and returns HTTP 429 Too Many Requests, saving downstream clusters from infinite loops."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does Agent Budget Sentinel require external pip dependencies or cloud servers?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Agent Budget Sentinel is built 100% on the Python 3.10+ standard library with zero external pip dependencies. It runs completely locally with zero telemetry leakage and sub-millisecond overhead."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What payment options are accepted for the Pro Founding Member license?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "You can purchase the $19 Lifetime Founding License using Stripe (Credit Cards, Apple Pay, Google Pay) or decentralized cryptocurrency via the DePay Solana widget."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Space+Grotesk:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- HIGH-CONVERTING SALES FUNNEL BANNER -->
+    <aside class="sales-banner" aria-label="Special Launch Offer">
+      <div class="sales-banner-left">
+        <span class="founding-badge">FOUNDING ACCESS</span>
+        <div class="sales-banner-text">
+          <strong>Autonomous Spending Guardrail:</strong> <span class="price-strike">$79</span> <span class="price-current">$19 Lifetime</span> • Protect your treasury from runaway infinite loops.
+        </div>
+      </div>
+      <div class="sales-banner-right">
+        <a href="https://buy.stripe.com/7sI7sA8hM2X8eFG8ww" target="_blank" rel="noopener" class="btn btn-primary" aria-label="Purchase Pro with Stripe">
+          <span>💳 Stripe Checkout ($19)</span>
+        </a>
+        <button type="button" class="btn btn-solana" onclick="openPaywallModal('DePay Solana Checkout')" aria-label="Purchase Pro with Solana">
+          <span>⚡ Solana DePay</span>
+        </button>
+        <button type="button" class="btn-link" onclick="openPaywallModal('Enter License Key')" aria-label="Activate License Key">
+          Have a key? Activate
+        </button>
+      </div>
+    </aside>
+
+    <!-- HEADER & STATUS -->
+    <header class="header">
+      <div class="brand-wrap">
+        <img src="/assets/favicon.svg" alt="Agent Budget Sentinel Shield Logo" class="brand-icon">
+        <h1 class="brand-title">
+          AGENT BUDGET SENTINEL
+          <span class="brand-version">v1.0.0</span>
+        </h1>
+      </div>
+      <div class="header-status">
+        <span id="headerBreakerPill" class="status-pill status-closed">BREAKER: CLOSED</span>
+        <span id="proStatusBadge" class="badge">FREE TIER</span>
+      </div>
+    </header>
+
+    <!-- TRIP REASON BANNER (Shown if tripped) -->
+    <div id="breakerReasonBanner" class="trip-reason-banner" role="alert"></div>
+
+    <!-- MAIN BENTO COCKPIT -->
+    <main class="bento-grid">
+      
+      <!-- CARD 1: MASTER SPENDING RADAR & PROGRESS GAUGE -->
+      <section class="card col-8" aria-labelledby="radarTitle">
+        <div class="card-header">
+          <h2 id="radarTitle" class="card-title">
+            <span>🛡 Real-Time Spending Radar</span>
+          </h2>
+          <span id="breakerStateBadge" class="status-pill status-closed">CLOSED</span>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem;">
+          <div>
+            <div class="metric-large" id="currentSpendVal">$0.0000</div>
+            <div class="metric-sub">Cumulative Spend in Active Window</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-family: var(--font-mono); font-size: 1.3rem; color: var(--gold);" id="maxBudgetVal">$5.00</div>
+            <div class="metric-sub">Hard Budget Ceiling</div>
+          </div>
+        </div>
+
+        <div class="progress-container" aria-label="Budget Consumption Gauge">
+          <div id="budgetProgressBar" class="progress-fill" style="width: 2%;"></div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); margin-top: 0.4rem;">
+          <div>Remaining: <strong class="text-mono text-gold" id="remainingBudgetVal">$5.0000</strong></div>
+          <div>Utilization: <strong class="text-mono" id="pctUsedVal">0.0%</strong></div>
+        </div>
+
+        <!-- Telemetry Stats Strip -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle);">
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Spend Velocity</div>
+            <div class="text-mono font-bold" id="velocityVal" style="color: var(--cyan); font-size: 0.95rem;">$0.0000/min</div>
+          </div>
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Total Tokens</div>
+            <div class="text-mono font-bold" id="totalTokensVal" style="font-size: 0.95rem;">0</div>
+          </div>
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Requests</div>
+            <div class="text-mono font-bold" id="totalRequestsVal" style="font-size: 0.95rem;">0</div>
+          </div>
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Blocked</div>
+            <div class="text-mono font-bold" id="blockedRequestsVal" style="color: var(--ruby); font-size: 0.95rem;">0</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CARD 2: CIRCUIT CONTROLS & KILL SWITCH -->
+      <section class="card col-4" aria-labelledby="controlsTitle">
+        <div class="card-header">
+          <h2 id="controlsTitle" class="card-title">
+            <span>⚡ Circuit Guardrail Controls</span>
+          </h2>
+        </div>
+
+        <div class="form-group">
+          <label for="inputNewBudget" class="form-label">Set Emergency Budget Ceiling ($ USD)</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="number" id="inputNewBudget" class="form-control text-mono" value="5.00" step="0.50" min="0.10">
+            <button type="button" id="btnSetBudget" class="btn btn-outline" style="white-space: nowrap;">Set Ceiling</button>
+          </div>
+        </div>
+
+        <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.6rem;">
+          <button type="button" id="btnTripBreaker" class="btn btn-danger" style="width: 100%;">
+            <span>💥 Emergency Kill Switch (Trip Breaker)</span>
+          </button>
+          <button type="button" id="btnResetBreaker" class="btn btn-success" style="width: 100%;">
+            <span>✓ Reset Breaker to CLOSED</span>
+          </button>
+        </div>
+
+        <div style="margin-top: 1rem; font-size: 0.75rem; color: var(--text-dim); line-height: 1.4;">
+          When tripped, inline proxy on port <strong>8111</strong> halts all upstream LLM calls with HTTP 429.
+        </div>
+      </section>
+
+      <!-- CARD 3: TRY-BEFORE-YOU-BUY TOKEN CALCULATOR -->
+      <section class="card col-6" aria-labelledby="calcTitle">
+        <div class="card-header">
+          <h2 id="calcTitle" class="card-title">
+            <span>🧮 Interactive Token Cost Calculator</span>
+          </h2>
+          <span class="badge" style="background: rgba(212, 175, 55, 0.15); color: var(--gold);">TRY BEFORE BUY</span>
+        </div>
+
+        <div class="form-group">
+          <label for="calcModelSelect" class="form-label">Target Model Architecture</label>
+          <select id="calcModelSelect" class="form-control text-mono">
+            <option value="gpt-4o">GPT-4o ($2.50 in / $10.00 out)</option>
+            <option value="gpt-4o-mini">GPT-4o-mini ($0.15 in / $0.60 out)</option>
+            <option value="o1">o1 Reasoning ($15.00 in / $60.00 out)</option>
+            <option value="o1-mini">o1-mini ($3.00 in / $12.00 out)</option>
+            <option value="claude-3-5-sonnet">Claude 3.5 Sonnet ($3.00 in / $15.00 out)</option>
+            <option value="claude-3-5-haiku">Claude 3.5 Haiku ($0.80 in / $4.00 out)</option>
+            <option value="gemini-1.5-pro">Gemini 1.5 Pro ($1.25 in / $5.00 out)</option>
+            <option value="deepseek-r1">DeepSeek R1 ($0.55 in / $2.19 out)</option>
+            <option value="deepseek-v3">DeepSeek V3 ($0.14 in / $0.28 out)</option>
+            <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B ($0.40 in / $0.40 out)</option>
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-group">
+            <label for="calcPromptTokens" class="form-label">Prompt Tokens</label>
+            <input type="number" id="calcPromptTokens" class="form-control text-mono" value="1200" step="100">
+          </div>
+          <div class="form-group">
+            <label for="calcCompletionTokens" class="form-label">Completion Tokens</label>
+            <input type="number" id="calcCompletionTokens" class="form-control text-mono" value="450" step="50">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="calcCallCount" class="form-label">Runaway Loop Iterations (Calls Count)</label>
+          <input type="number" id="calcCallCount" class="form-control text-mono" value="1" min="1" max="10000">
+        </div>
+
+        <div style="background: var(--bg-card-subtle); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 1rem; display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Cost / Request</div>
+            <div id="calcSingleCost" class="text-mono font-bold" style="color: var(--gold); font-size: 1.1rem;">$0.00750</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Total Runaway Cost</div>
+            <div id="calcTotalCost" class="text-mono font-bold" style="color: var(--ruby); font-size: 1.3rem;">$0.0075</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CARD 4: LIVE SIMULATION TESTING HARNESS -->
+      <section class="card col-6" aria-labelledby="simTitle">
+        <div class="card-header">
+          <h2 id="simTitle" class="card-title">
+            <span>🧪 Circuit Breaker Test Simulator</span>
+          </h2>
+          <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: var(--emerald);">LIVE HARNESS</span>
+        </div>
+
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Verify that Agent Budget Sentinel trips and protects downstream systems without spending real API credits.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <button type="button" id="btnSimulateSingle" class="btn btn-outline" style="width: 100%; justify-content: flex-start;">
+            <span>▶ Simulate 1 Intercepted Call (Adds spend & updates radar)</span>
+          </button>
+          
+          <button type="button" id="btnSimulateRunaway" class="btn btn-primary" style="width: 100%; justify-content: flex-start;">
+            <span>⚡ Simulate Runaway Loop Burst (Watch Breaker Auto-Trip!)</span>
+          </button>
+        </div>
+
+        <div style="margin-top: 1.25rem; padding: 1rem; border-radius: 8px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-subtle); font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);">
+          <div style="color: var(--gold); margin-bottom: 0.35rem;"># Run any agent through the proxy:</div>
+          <div>export OPENAI_BASE_URL="http://127.0.0.1:8111/v1"</div>
+          <div>agent-budget run -- python my_agent.py</div>
+        </div>
+      </section>
+
+      <!-- CARD 5: LIVE INTERCEPTED TRANSACTIONS LEDGER -->
+      <section class="card col-12" aria-labelledby="txTitle">
+        <div class="card-header">
+          <h2 id="txTitle" class="card-title">
+            <span>🛰 Intercepted Agent Calls (Live SSE Stream)</span>
+          </h2>
+          <button type="button" class="btn btn-outline" style="min-height: 36px; padding: 0.3rem 0.75rem; font-size: 0.8rem;" onclick="fetchTransactions()">
+            ↻ Refresh Ledger
+          </button>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Model</th>
+                <th>Total Tokens</th>
+                <th>Cost (USD)</th>
+                <th>Latency</th>
+                <th>Breaker Action</th>
+              </tr>
+            </thead>
+            <tbody id="txTableBody">
+              <tr>
+                <td colspan="6" class="empty-cell">Connecting to live SSE telemetry stream on :8110...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- CARD 6: FROSTED GLASS BLUR PAYWALL (Pro FinOps Mode) -->
+      <section class="card col-12 paywall-wrapper" aria-labelledby="proTitle">
+        <div class="card-header">
+          <h2 id="proTitle" class="card-title">
+            <span>🔒 Advanced Multi-Agent Quotas & FinOps Audit</span>
+          </h2>
+          <span class="badge badge-pro">PRO FEATURE</span>
+        </div>
+
+        <!-- Blurred Content -->
+        <div class="paywall-blurred">
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+            <div style="background: var(--bg-card-subtle); padding: 1.25rem; border-radius: 10px; border: 1px solid var(--border-subtle);">
+              <div style="font-weight: 700; color: var(--gold);">Multi-Agent Quota Fencing</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Define independent budget ceilings per agent persona (e.g. Researcher: $2/day, Coder: $8/day).</div>
+            </div>
+            <div style="background: var(--bg-card-subtle); padding: 1.25rem; border-radius: 10px; border: 1px solid var(--border-subtle);">
+              <div style="font-weight: 700; color: var(--cyan);">Anomaly Velocity Radar</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Automatic heuristic kill switch if token velocity exceeds 150,000 tokens per minute.</div>
+            </div>
+            <div style="background: var(--bg-card-subtle); padding: 1.25rem; border-radius: 10px; border: 1px solid var(--border-subtle);">
+              <div style="font-weight: 700; color: var(--emerald);">One-Click FinOps Export</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Generate auditor-grade CSV, JSON, and PDF compliance reports for client billing.</div>
+            </div>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="triggerAuditExport()">Download FinOps Audit Bundle</button>
+        </div>
+
+        <!-- Lock Overlay -->
+        <div class="paywall-overlay">
+          <div class="paywall-icon">🔐</div>
+          <h3 class="paywall-title">Unlock Advanced FinOps & Multi-Agent Hierarchy</h3>
+          <p class="paywall-desc">
+            Prevent catastrophic bill shock across your entire agent swarm. Includes multi-persona fences, anomaly spike velocity triggers, and one-click compliance audit export.
+          </p>
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center;">
+            <a href="https://buy.stripe.com/7sI7sA8hM2X8eFG8ww" target="_blank" rel="noopener" class="btn btn-primary">
+              <span>💳 Unlock Pro via Stripe ($19)</span>
+            </a>
+            <button type="button" class="btn btn-solana" onclick="openPaywallModal('DePay Solana Checkout')">
+              <span>⚡ Unlock via Solana</span>
+            </button>
+            <button type="button" class="btn btn-outline" onclick="openPaywallModal('Enter License Key')">
+              <span>Enter License Key</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- PRO PAYWALL MODAL -->
+    <div id="paywallModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-card">
+        <button type="button" class="modal-close" onclick="closePaywallModal()" aria-label="Close dialog">&times;</button>
+        
+        <span class="founding-badge">PRO LICENSE</span>
+        <h3 id="modalTitle" style="font-size: 1.4rem; color: #FFF; margin: 0.75rem 0 0.25rem 0;">
+          Unlock Sovereign FinOps Suite
+        </h3>
+        <p style="font-size: 0.88rem; color: var(--text-muted);">
+          Triggered by: <strong id="modalFeatureName" style="color: var(--gold);">Advanced Mode</strong>
+        </p>
+
+        <ul class="matrix-list">
+          <li class="matrix-item"><span class="matrix-check">✓</span> <span>Zero-latency inline token cost circuit breaker (:8111 proxy)</span></li>
+          <li class="matrix-item"><span class="matrix-check">✓</span> <span>Multi-agent quota fencing & persona-level budget limits</span></li>
+          <li class="matrix-item"><span class="matrix-check">✓</span> <span>Runaway loop velocity spike detector (>150k tokens/min auto-kill)</span></li>
+          <li class="matrix-item"><span class="matrix-check">✓</span> <span>One-click FinOps CSV & PDF compliance audit exporter</span></li>
+          <li class="matrix-item"><span class="matrix-check">✓</span> <span>100% Python standard library — zero external pip dependencies</span></li>
+          <li class="matrix-item"><span class="matrix-check">✓</span> <span>Lifetime access, free updates & sovereign local ownership</span></li>
+        </ul>
+
+        <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem; flex-wrap: wrap;">
+          <a href="https://buy.stripe.com/7sI7sA8hM2X8eFG8ww" target="_blank" rel="noopener" class="btn btn-primary" style="flex: 1; min-width: 180px;">
+            <span>💳 Stripe Checkout ($19)</span>
+          </a>
+          <a href="https://depay.com/ GG2eQbVh8ut1BK6j1A2tz7pSySdLpD38BgyEhGcxdXoK" target="_blank" rel="noopener" class="btn btn-solana" style="flex: 1; min-width: 180px;">
+            <span>⚡ Solana Pay ($19)</span>
+          </a>
+        </div>
+
+        <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle);">
+          <label for="licenseKeyInput" class="form-label">Already purchased? Enter receipt email or license key:</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="text" id="licenseKeyInput" class="form-control text-mono" placeholder="SOVEREIGN-KEY-..." aria-label="License key input">
+            <button type="button" class="btn btn-outline" onclick="verifyLicenseKey()">Activate</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBTLE ATTRIBUTION FOOTER -->
+    <footer class="footer">
+      <div>
+        Engineered by <strong>Neal Frazier Tech</strong> (<a href="https://github.com/1nc0gn30" target="_blank" rel="noopener">@1nc0gn30</a>) • <a href="https://nullai.tech" target="_blank" rel="noopener">NullAI Platform</a>
+      </div>
+      <div style="margin-top: 0.5rem; font-size: 0.78rem;">
+        <a href="https://github.com/1nc0gn30/agent-budget-sentinel" target="_blank" rel="noopener">GitHub Repository</a> • Port 8110 (Web Deck) • Port 8111 (Circuit Breaker Proxy)
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="/budget_engine.js"></script>
+</body>
+</html>
