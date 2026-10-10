@@ -35,11 +35,12 @@ document.addEventListener("DOMContentLoaded", () => {
 // --- Licensing & Monetization ---
 function initLicenseState() {
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get("licensed") === "true") {
+  if (urlParams.get("licensed") === "true" || urlParams.get("session_id")) {
     localStorage.setItem("budget_sentinel_pro_license", "SOVEREIGN-FOUNDING-LIFETIME-ACTIVE");
+    localStorage.setItem("pro_licensed", "true");
   }
 
-  const savedLicense = localStorage.getItem("budget_sentinel_pro_license");
+  const savedLicense = localStorage.getItem("budget_sentinel_pro_license") || localStorage.getItem("pro_licensed");
   if (savedLicense) {
     activateProState();
   }
@@ -47,6 +48,8 @@ function initLicenseState() {
 
 function activateProState() {
   isPro = true;
+  localStorage.setItem("pro_licensed", "true");
+  
   const badge = document.getElementById("proStatusBadge");
   if (badge) {
     badge.textContent = "⭐ PRO ACTIVE";
@@ -67,6 +70,8 @@ function activateProState() {
 
   // Close modal if open
   closePaywallModal();
+  closeCryptoModal();
+  showToast("⭐ Sovereign Pro License Active — All Features Unlocked!");
 }
 
 function openPaywallModal(featureName = "Advanced FinOps Mode") {
@@ -80,6 +85,46 @@ function openPaywallModal(featureName = "Advanced FinOps Mode") {
 function closePaywallModal() {
   const modal = document.getElementById("paywallModal");
   if (modal) modal.style.display = "none";
+}
+
+function openCryptoModal() {
+  const modal = document.getElementById("cryptoModal");
+  if (modal) modal.style.display = "flex";
+}
+
+function closeCryptoModal() {
+  const modal = document.getElementById("cryptoModal");
+  if (modal) modal.style.display = "none";
+}
+
+function openDePayCheckout() {
+  if (typeof DePayWidgets !== 'undefined' && DePayWidgets.Payment) {
+    DePayWidgets.Payment({
+      integration: '428790dd-7ad1-407c-8ecf-c048c77a4cb8'
+    });
+  } else {
+    openCryptoModal();
+  }
+}
+
+function copyWalletAddress(coin) {
+  const addr = coin === 'sol'
+    ? 'GG2eQbVh8ut1BK6j1A2tz7pSySdLpD38BgyEhGcxdXoK'
+    : 'bc1p2dr247zklh8pnffak0ew7m82u2w8gx25ys28x7aavr95z674ydzsfw500t';
+  navigator.clipboard.writeText(addr).then(() => {
+    showToast(`✓ Copied ${coin.toUpperCase()} address!`);
+  }).catch(() => {
+    prompt(`Copy ${coin.toUpperCase()} address:`, addr);
+  });
+}
+
+function copyConfigCommand() {
+  const cmd = `export OPENAI_BASE_URL="http://127.0.0.1:8111/v1"\nagent-budget run -- python my_agent.py`;
+  navigator.clipboard.writeText(cmd).then(() => {
+    showToast("✓ Copied proxy startup command!");
+  }).catch(() => {
+    prompt("Copy proxy command:", cmd);
+  });
 }
 
 function verifyLicenseKey() {
@@ -133,6 +178,16 @@ function renderStats(data) {
   if (headerPill) {
     headerPill.textContent = `BREAKER: ${state}`;
     headerPill.className = `status-pill status-${state.toLowerCase()}`;
+  }
+
+  // Synchronize state with The Chrono-Vault Aegis kinetic canvas
+  if (window.ChronoVault && window.ChronoVault.setState) {
+    window.ChronoVault.setState(state);
+  }
+  const canvasPill = document.getElementById("canvasStatePill");
+  if (canvasPill) {
+    canvasPill.textContent = state === "TRIPPED" ? "AEGIS: TRIPPED" : (state === "WARN" ? "AEGIS: WARN" : "60 FPS KINETIC STREAM");
+    canvasPill.className = `status-pill status-${state.toLowerCase()}`;
   }
 
   if (spendEl) spendEl.textContent = `$${spend.toFixed(4)}`;
@@ -397,13 +452,78 @@ function initBreakerControls() {
   }
 }
 
-// Export Audit Interceptor
+// Export Audit Interceptors
 function triggerAuditExport() {
+  exportAuditLedger('json');
+}
+
+async function exportAuditLedger(format = 'json') {
   if (!isPro) {
-    openPaywallModal("FinOps Audit Exporter (JSON/PDF)");
+    openPaywallModal(`FinOps Compliance Exporter (${format.toUpperCase()})`);
     return;
   }
-  window.open("/api/transactions?limit=500", "_blank");
+  try {
+    const res = await fetch("/api/transactions?limit=250");
+    const json = await res.json();
+    const txs = json.transactions || [];
+
+    if (txs.length === 0) {
+      alert("No transaction records available to export yet. Run agent calls or simulation bursts first!");
+      return;
+    }
+
+    if (format === 'csv') {
+      const headers = ["id", "timestamp", "model", "prompt_tokens", "completion_tokens", "cost_usd", "latency_ms", "status_code", "tripped", "reason"];
+      const rows = txs.map(t => headers.map(h => JSON.stringify(t[h] ?? "")).join(","));
+      const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent([headers.join(","), ...rows].join("\n"));
+      const link = document.createElement("a");
+      link.setAttribute("href", csvContent);
+      link.setAttribute("download", `budget_sentinel_audit_${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(txs, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `budget_sentinel_audit_${Date.now()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+    showToast(`✓ Exported ${txs.length} audit records (${format.toUpperCase()})`);
+  } catch (e) {
+    alert("Export failed: " + e.message);
+  }
+}
+
+function openShowreelModal() {
+  const modal = document.getElementById("showreelModal");
+  if (modal) modal.style.display = "flex";
+}
+
+function closeShowreelModal() {
+  const modal = document.getElementById("showreelModal");
+  if (modal) modal.style.display = "none";
+}
+
+function showToast(msg) {
+  let toast = document.getElementById("sentinelToast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "sentinelToast";
+    toast.className = "toast";
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.display = "flex";
+  toast.style.opacity = "1";
+  toast.style.transform = "translateY(0)";
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateY(10px)";
+    setTimeout(() => { toast.style.display = "none"; }, 300);
+  }, 2600);
 }
 
 function escapeHtml(str) {

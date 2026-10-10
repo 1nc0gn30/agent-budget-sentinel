@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support & FAQ Hub — Agent Budget Sentinel</title>
+  <meta name="description" content="Support Hub, Technical Documentation & FAQ for Agent Budget Sentinel.">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Space+Grotesk:wght@400;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container" style="max-width: 860px; padding: 2rem 1rem;">
+    <header class="header">
+      <div class="brand-wrap">
+        <a href="/" style="display: flex; align-items: center; gap: 0.85rem; text-decoration: none;">
+          <img src="/assets/favicon.svg" alt="Agent Budget Sentinel Shield Logo" class="brand-icon">
+          <span class="brand-title" style="font-family: 'Syne', sans-serif;">AGENT BUDGET SENTINEL</span>
+        </a>
+      </div>
+      <div>
+        <a href="/" class="btn btn-outline" style="min-height: 38px; padding: 0.4rem 0.9rem;">← Back to App</a>
+      </div>
+    </header>
+
+    <main class="card" style="padding: 2rem; margin-top: 1rem;">
+      <h1 style="font-family: 'Syne', sans-serif; font-size: 2rem; color: #FFF; margin-bottom: 0.5rem;">Support & FAQ Hub</h1>
+      <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 2rem;">Engineered by Neal Frazier Tech (@1nc0gn30) • NullAI Platform</p>
+
+      <!-- FAQ Section -->
+      <section style="margin-bottom: 2rem;">
+        <h2 style="font-size: 1.25rem; color: var(--gold); margin-bottom: 1rem;">Frequently Asked Questions</h2>
+        
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <div style="background: var(--bg-card-subtle); padding: 1.25rem; border-radius: 10px; border: 1px solid var(--border-subtle);">
+            <h3 style="font-size: 1rem; color: #FFF; margin-bottom: 0.35rem;">How does Agent Budget Sentinel intercept runaway loops?</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+              The tool runs an inline micro-proxy on port 8111. When your agent makes an OpenAI or Anthropic API call, Agent Budget Sentinel analyzes the prompt tokens, computes real-time pricing against our model database, and verifies the current spend against your hard ceiling and velocity threshold. If an anomaly or overage is detected, it trips in under 1ms and returns HTTP 429, instantly killing the infinite loop.
+            </p>
+          </div>
+
+          <div style="background: var(--bg-card-subtle); padding: 1.25rem; border-radius: 10px; border: 1px solid var(--border-subtle);">
+            <h3 style="font-size: 1rem; color: #FFF; margin-bottom: 0.35rem;">Does it require external dependencies or internet access?</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+              Zero external pip dependencies. The core server, SQLite storage, token pricing calculator, and circuit breaker proxy use only the Python standard library. The web interface operates client-side with offline resilience.
+            </p>
+          </div>
+
+          <div style="background: var(--bg-card-subtle); padding: 1.25rem; border-radius: 10px; border: 1px solid var(--border-subtle);">
+            <h3 style="font-size: 1rem; color: #FFF; margin-bottom: 0.35rem;">How do I activate my Pro lifetime license?</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+              Click "Have a key? Activate" in the header or sales banner, enter your Stripe checkout receipt email or transaction ID, and your browser will permanently unlock all FinOps and multi-agent fencing capabilities. You can also append <code class="text-mono">?licensed=true</code> to your URL.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Ticket / Direct Support -->
+      <section style="margin-bottom: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-subtle);">
+        <h2 style="font-size: 1.25rem; color: var(--gold); margin-bottom: 0.75rem;">Need Direct Assistance?</h2>
+        <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 1.25rem;">
+          Our sovereign engineering team provides direct priority email support to all founding members:
+        </p>
+
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <a href="mailto:support@nealfrazier.tech?subject=Agent%20Budget%20Sentinel%20Support%20Request" class="btn btn-primary">
+            <span>✉ Email support@nealfrazier.tech</span>
+          </a>
+          <a href="https://github.com/1nc0gn30/agent-budget-sentinel/issues" target="_blank" rel="noopener" class="btn btn-outline">
+            <span>Issue Tracker on GitHub</span>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div>
+        Engineered by <strong>Neal Frazier Tech</strong> (<a href="https://github.com/1nc0gn30" target="_blank" rel="noopener">@1nc0gn30</a>) • <a href="https://nullai.tech" target="_blank" rel="noopener">NullAI Platform</a>
+      </div>
+      <div style="margin-top: 0.5rem; font-size: 0.78rem;">
+        <a href="/">App Cockpit</a> • <a href="/terms.html">Terms of Service</a> • <a href="/privacy.html">Privacy Policy</a> • <a href="/support.html">Support & FAQ</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
