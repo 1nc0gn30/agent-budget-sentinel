@@ -27,6 +27,7 @@ class BudgetPolicy:
     warn_threshold_pct: float = 0.80
     velocity_limit_usd_per_min: float = 2.00  # Spike detector: trip if rate exceeds $2/min
     auto_trip_on_estimate: bool = True       # Trip if next request would breach ceiling
+    query_token_budget: Optional[int] = None # Maximum allowed tokens per query
 
 
 class CircuitBreaker:
@@ -146,6 +147,9 @@ class CircuitBreaker:
                 )
                 event_to_notify = "trip"
                 event_data = self.get_status()
+            elif self.state == BreakerState.TRIPPED:
+                # Already tripped - preserve TRIPPED state
+                pass
             elif self.total_spend_usd >= (self.policy.max_budget_usd * self.policy.warn_threshold_pct):
                 if self.state != BreakerState.WARN:
                     self.state = BreakerState.WARN
@@ -163,6 +167,10 @@ class CircuitBreaker:
         """Manually trip the circuit breaker."""
         event_data = {}
         with self._lock:
+            if self.state == BreakerState.TRIPPED:
+                if reason:
+                    self.trip_reason = reason
+                return
             self._trip_locked(reason)
             event_data = self.get_status()
         self._notify("trip", event_data)
@@ -186,6 +194,8 @@ class CircuitBreaker:
                 self.total_completion_tokens = 0
                 self.total_requests = 0
                 self.blocked_requests = 0
+                self.trip_count = 0
+                self.tripped_at = None
                 self._spend_window.clear()
             event_data = self.get_status()
         self._notify("reset", event_data)
@@ -193,7 +203,7 @@ class CircuitBreaker:
     def set_budget(self, max_budget_usd: float) -> None:
         """Update maximum budget ceiling."""
         with self._lock:
-            self.policy.max_budget_usd = max(0.01, float(max_budget_usd))
+            self.policy.max_budget_usd = max(0.000001, float(max_budget_usd))
             if self.total_spend_usd < self.policy.max_budget_usd and self.state == BreakerState.TRIPPED:
                 # If budget was increased above current spend, restore to CLOSED/WARN
                 if self.total_spend_usd >= (self.policy.max_budget_usd * self.policy.warn_threshold_pct):

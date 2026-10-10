@@ -75,8 +75,9 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
         model = payload.get("model", "unknown")
         # Estimate prompt tokens and projected cost
         estimated_prompt_tokens = CostCalculator.estimate_payload_tokens(payload)
-        # Conservative upper bound estimate assuming ~500 completion tokens
-        projected_cost = CostCalculator.calculate_cost_usd(model, estimated_prompt_tokens, completion_tokens=500)
+        is_stream = bool(payload.get("stream", False)) or "text/event-stream" in self.headers.get("Accept", "")
+        completion_est = 1 if is_stream else 500
+        projected_cost = CostCalculator.calculate_cost_usd(model, estimated_prompt_tokens, completion_tokens=completion_est)
 
         # 1. Circuit Breaker Evaluation
         allowed, state, reason = self.server.breaker.evaluate_request(projected_cost)
@@ -89,6 +90,11 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
             return
 
         # 2. Forward Upstream
+        if is_stream:
+            self._forward_streaming_upstream(body_bytes, payload, model, estimated_prompt_tokens, client_ip)
+            return
+
+        # 3. Forward Upstream (non-streaming)
         self._forward_upstream(body_bytes, payload, model, estimated_prompt_tokens, client_ip)
 
     def _send_breaker_rejection(
@@ -275,6 +281,236 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(resp_bytes)))
         self.end_headers()
         self.wfile.write(resp_bytes)
+
+    def _forward_streaming_upstream(
+        self,
+        body_bytes: bytes,
+        payload: Dict[str, Any],
+        model: str,
+        estimated_prompt_tokens: int,
+        client_ip: str
+    ) -> None:
+        """Stream SSE chunks in real time and enforce mid-flight budget / token limits."""
+        target_url = self._resolve_upstream_url()
+        t0 = time.time()
+
+        req = urllib.request.Request(
+            target_url,
+            data=body_bytes if self.command == "POST" else None,
+            method=self.command
+        )
+
+        for key, val in self.headers.items():
+            k_lower = key.lower()
+            if k_lower in ("host", "content-length", "x-target-url", "connection", "keep-alive"):
+                continue
+            req.add_header(key, val)
+
+        parsed_target = urllib.parse.urlparse(target_url)
+        req.add_header("Host", parsed_target.netloc)
+
+        # Resolve query token budget from headers, payload, or policy
+        query_token_budget: Optional[int] = None
+        for h in ("X-Token-Budget", "x-token-budget", "X-Query-Budget", "x-query-budget", "X-Max-Tokens", "x-max-tokens"):
+            if h in self.headers:
+                try:
+                    query_token_budget = int(self.headers[h])
+                    break
+                except (ValueError, TypeError):
+                    pass
+
+        if query_token_budget is None:
+            for k in ("query_token_budget", "token_budget", "max_tokens", "max_completion_tokens"):
+                if k in payload and payload[k] is not None:
+                    try:
+                        query_token_budget = int(payload[k])
+                        break
+                    except (ValueError, TypeError):
+                        pass
+
+        if query_token_budget is None and hasattr(self.server.breaker.policy, "query_token_budget"):
+            query_token_budget = self.server.breaker.policy.query_token_budget
+
+        upstream_status = 502
+        resp = None
+
+        try:
+            resp = urllib.request.urlopen(req, timeout=30.0)
+            upstream_status = resp.status
+        except urllib.error.HTTPError as e:
+            upstream_status = e.code
+            resp_bytes = e.read()
+            self.send_response(upstream_status)
+            for h_key, h_val in e.headers.items():
+                if h_key.lower() in ("content-length", "transfer-encoding", "connection", "content-encoding"):
+                    continue
+                self.send_header(h_key, h_val)
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Content-Length", str(len(resp_bytes)))
+            self.end_headers()
+            self.wfile.write(resp_bytes)
+            return
+        except Exception as e:
+            err_obj = {
+                "error": {
+                    "message": f"agent-budget-sentinel proxy error forwarding upstream: {str(e)}",
+                    "type": "proxy_error",
+                    "code": "upstream_unreachable"
+                }
+            }
+            resp_bytes = json.dumps(err_obj).encode("utf-8")
+            self.send_response(502)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Content-Length", str(len(resp_bytes)))
+            self.end_headers()
+            self.wfile.write(resp_bytes)
+            return
+
+        # Upstream succeeded. Forward SSE response headers.
+        self.send_response(upstream_status)
+        for h_key, h_val in resp.headers.items():
+            if h_key.lower() in ("content-length", "transfer-encoding", "connection", "content-encoding"):
+                continue
+            self.send_header(h_key, h_val)
+
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "close")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("X-Budget-State", self.server.breaker.state.value)
+        self.end_headers()
+        self.close_connection = True
+
+        accumulated_completion_tokens = 0
+        tripped_mid_stream = False
+        trip_reason = ""
+
+        try:
+            while True:
+                line = resp.readline()
+                if not line:
+                    break
+
+                if line.startswith(b"data:"):
+                    data_payload = line[5:].strip()
+                    if data_payload != b"[DONE]":
+                        try:
+                            chunk_obj = json.loads(data_payload.decode("utf-8", errors="replace"))
+                            delta_text = ""
+                            choices = chunk_obj.get("choices", [])
+                            for ch in choices:
+                                delta = ch.get("delta", {})
+                                if "content" in delta and delta["content"]:
+                                    delta_text += delta["content"]
+                                elif "text" in ch and ch["text"]:
+                                    delta_text += ch["text"]
+                            if chunk_obj.get("type") == "content_block_delta":
+                                d = chunk_obj.get("delta", {})
+                                if d.get("type") == "text_delta" and "text" in d:
+                                    delta_text += d["text"]
+
+                            if delta_text:
+                                chunk_tokens = CostCalculator.estimate_text_tokens(delta_text)
+                                accumulated_completion_tokens += chunk_tokens
+                        except Exception:
+                            pass
+
+                        # Evaluate mid-stream budget conditions:
+                        token_budget_exceeded = False
+                        if query_token_budget is not None and query_token_budget > 0:
+                            if accumulated_completion_tokens >= query_token_budget:
+                                token_budget_exceeded = True
+                            elif query_token_budget > estimated_prompt_tokens and (estimated_prompt_tokens + accumulated_completion_tokens) >= query_token_budget:
+                                token_budget_exceeded = True
+
+                        current_cost = CostCalculator.calculate_cost_usd(
+                            model, estimated_prompt_tokens, accumulated_completion_tokens
+                        )
+                        projected_total = self.server.breaker.total_spend_usd + current_cost
+                        cost_budget_exceeded = projected_total >= self.server.breaker.policy.max_budget_usd
+
+                        if token_budget_exceeded or cost_budget_exceeded:
+                            tripped_mid_stream = True
+                            trip_reason = "Budget limit exceeded mid-stream. Circuit breaker tripped."
+
+                try:
+                    self.wfile.write(line)
+                    self.wfile.flush()
+                except (BrokenPipeError, ConnectionResetError):
+                    break
+
+                if tripped_mid_stream:
+                    break
+        finally:
+            # IMMEDIATELY sever upstream TCP connection
+            try:
+                if hasattr(resp, "fp") and resp.fp:
+                    resp.fp.close()
+                resp.close()
+            except Exception:
+                pass
+
+        latency_ms = round((time.time() - t0) * 1000.0, 2)
+        stream_cost = CostCalculator.calculate_cost_usd(
+            model, estimated_prompt_tokens, accumulated_completion_tokens
+        )
+
+        if tripped_mid_stream:
+            # 1. Record partial spend and trip circuit breaker state
+            self.server.breaker.record_spend(
+                stream_cost, estimated_prompt_tokens, accumulated_completion_tokens, model
+            )
+            self.server.breaker.trip(trip_reason)
+
+            # 2. Emit terminal SSE error event
+            terminal_event = (
+                b"event: circuit_breaker_trip\n"
+                b"data: {\"error\": \"Budget limit exceeded mid-stream. Circuit breaker tripped.\"}\n\n"
+            )
+            try:
+                self.wfile.write(terminal_event)
+                self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+
+            # 3. Log transaction
+            record = TransactionRecord(
+                id=None,
+                timestamp="",
+                model=model,
+                prompt_tokens=estimated_prompt_tokens,
+                completion_tokens=accumulated_completion_tokens,
+                cost_usd=stream_cost,
+                latency_ms=latency_ms,
+                status_code=429,
+                path=self.path,
+                source_ip=client_ip,
+                tripped=True,
+                reason=trip_reason
+            )
+            self.server.storage.record_transaction(record)
+        else:
+            if upstream_status < 400:
+                self.server.breaker.record_spend(
+                    stream_cost, estimated_prompt_tokens, accumulated_completion_tokens, model
+                )
+
+            record = TransactionRecord(
+                id=None,
+                timestamp="",
+                model=model,
+                prompt_tokens=estimated_prompt_tokens,
+                completion_tokens=accumulated_completion_tokens,
+                cost_usd=stream_cost,
+                latency_ms=latency_ms,
+                status_code=upstream_status,
+                path=self.path,
+                source_ip=client_ip,
+                tripped=False,
+                reason=None
+            )
+            self.server.storage.record_transaction(record)
 
     def _handle_forward(self) -> None:
         """Handle GET forwards if requested."""
