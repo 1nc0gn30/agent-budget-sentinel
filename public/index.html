@@ -5,14 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agent Budget Sentinel — Autonomous LLM Token Cost Circuit Breaker</title>
   <meta name="description" content="Autonomous zero-dependency spending guardrail and real-time token cost circuit breaker for AI agents. Eliminate runaway API bills, auto-kill infinite loops, and enforce hard spending fences.">
-  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon.png">
+  <link rel="apple-touch-icon" href="/assets/icon.png">
   
   <!-- OpenGraph Meta Tags -->
   <meta property="og:title" content="Agent Budget Sentinel — Autonomous LLM Token Cost Circuit Breaker">
   <meta property="og:description" content="Autonomous zero-dependency spending guardrail and real-time token cost circuit breaker for AI agents. Eliminate runaway API bills and enforce hard spending fences.">
   <meta property="og:url" content="https://agent-budget-sentinel.nullai.tech/">
   <meta property="og:type" content="website">
-  <meta property="og:image" content="https://agent-budget-sentinel.nullai.tech/assets/og-budget-sentinel.png">
+  <meta property="og:image" content="https://agent-budget-sentinel.nullai.tech/assets/banner.png">
   
   <!-- Twitter Meta Tags -->
   <meta name="twitter:card" content="summary_large_image">
@@ -20,7 +22,7 @@
   <meta name="twitter:creator" content="@1nc0gn30">
   <meta name="twitter:title" content="Agent Budget Sentinel — Autonomous LLM Token Cost Circuit Breaker">
   <meta name="twitter:description" content="Zero-dependency spending guardrail & emergency circuit breaker for AI agents. Auto-kill infinite loops with zero cloud overages.">
-  <meta name="twitter:image" content="https://agent-budget-sentinel.nullai.tech/assets/og-budget-sentinel.png">
+  <meta name="twitter:image" content="https://agent-budget-sentinel.nullai.tech/assets/banner.png">
 
   <!-- AEO & SEO Schema.org Graph -->
   <script type="application/ld+json">
@@ -99,13 +101,13 @@
         </div>
       </div>
       <div class="sales-banner-right">
-        <a href="https://buy.stripe.com/7sI7sA8hM2X8eFG8ww" target="_blank" rel="noopener" class="btn btn-primary" aria-label="Purchase Pro with Stripe">
+        <a href="https://buy.stripe.com/7sI7sA8hM2X8eFG8ww" target="_blank" rel="noopener" class="btn btn-primary" id="btn-stripe-checkout" aria-label="Purchase Pro with Stripe">
           <span>💳 Stripe Checkout ($19)</span>
         </a>
-        <button type="button" class="btn btn-solana" onclick="openDePayCheckout()" aria-label="Purchase Pro with Solana">
+        <button type="button" class="btn btn-solana btn-depay-trigger" id="btn-depay-solana" onclick="openDePayCheckout()" aria-label="Purchase Pro with Solana">
           <span>⚡ Solana DePay</span>
         </button>
-        <button type="button" class="btn-link" onclick="openPaywallModal('Enter License Key')" aria-label="Activate License Key">
+        <button type="button" class="btn-link" id="btn-open-license-modal" onclick="openPaywallModal('Enter License Key')" aria-label="Activate License Key">
           Have a key? Activate
         </button>
       </div>
@@ -114,7 +116,7 @@
     <!-- HEADER & STATUS -->
     <header class="header">
       <div class="brand-wrap">
-        <img src="/assets/favicon.svg" alt="Agent Budget Sentinel Shield Logo" class="brand-icon">
+        <img src="/assets/icon.png" alt="Agent Budget Sentinel Shield Logo" class="brand-icon" width="36" height="36">
         <h1 class="brand-title">
           AGENT BUDGET SENTINEL
           <span class="brand-version">v1.0.0</span>
@@ -122,7 +124,8 @@
       </div>
       <div class="header-status">
         <span id="headerBreakerPill" class="status-pill status-closed">BREAKER: CLOSED</span>
-        <span id="proStatusBadge" class="badge">FREE TIER</span>
+        <span id="pro-badge" class="badge">FREE TIER</span>
+        <button type="button" class="btn btn-outline" id="btn-header-key" style="min-height: 30px; padding: 0.2rem 0.65rem; font-size: 0.75rem;" onclick="openPaywallModal('Enter License Key')">🔑 Activate Pro</button>
       </div>
     </header>
 
@@ -348,13 +351,13 @@
             <span>🛰 Intercepted Agent Calls (Live SSE Stream)</span>
           </h2>
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <button type="button" class="btn btn-outline" style="min-height: 36px; padding: 0.3rem 0.75rem; font-size: 0.8rem;" onclick="exportAuditLedger('csv')" aria-label="Export CSV Audit Ledger">
+            <button type="button" class="btn btn-outline" id="btn-export-csv" style="min-height: 36px; padding: 0.3rem 0.75rem; font-size: 0.8rem;" onclick="exportAuditLedger('csv')" aria-label="Export CSV Audit Ledger">
               📥 Export CSV
             </button>
-            <button type="button" class="btn btn-primary" style="min-height: 36px; padding: 0.3rem 0.75rem; font-size: 0.8rem;" onclick="exportAuditLedger('json')" aria-label="Export FinOps Bundle">
+            <button type="button" class="btn btn-primary" id="btn-export-finops" style="min-height: 36px; padding: 0.3rem 0.75rem; font-size: 0.8rem;" onclick="exportAuditLedger('json')" aria-label="Export FinOps Bundle">
               ⚡ Export FinOps Bundle
             </button>
-            <button type="button" class="btn btn-outline" style="min-height: 36px; padding: 0.3rem 0.75rem; font-size: 0.8rem;" onclick="fetchTransactions()" aria-label="Refresh Transactions">
+            <button type="button" class="btn btn-outline" id="btn-refresh-ledger" style="min-height: 36px; padding: 0.3rem 0.75rem; font-size: 0.8rem;" onclick="fetchTransactions()" aria-label="Refresh Transactions">
               ↻ Refresh Ledger
             </button>
           </div>
@@ -382,7 +385,7 @@
       </section>
 
       <!-- CARD 6: FROSTED GLASS BLUR PAYWALL (Pro FinOps Mode) -->
-      <section class="card col-12 paywall-wrapper border-beam" aria-labelledby="proTitle">
+      <section class="card col-12 paywall-wrapper border-beam" id="finops-paywall-section" aria-labelledby="proTitle">
         <div class="card-header">
           <h2 id="proTitle" class="card-title">
             <span>🔒 Advanced Multi-Agent Quotas & FinOps Audit</span>
@@ -391,7 +394,7 @@
         </div>
 
         <!-- Blurred Content -->
-        <div class="paywall-blurred">
+        <div class="paywall-blurred" id="finops-paywall-content">
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
             <div style="background: var(--bg-card-subtle); padding: 1.25rem; border-radius: 10px; border: 1px solid var(--border-subtle);">
               <div style="font-weight: 700; color: var(--gold);">Multi-Agent Quota Fencing</div>
@@ -406,24 +409,24 @@
               <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Generate auditor-grade CSV, JSON, and PDF compliance reports for client billing.</div>
             </div>
           </div>
-          <button type="button" class="btn btn-primary" onclick="triggerAuditExport()">Download FinOps Audit Bundle</button>
+          <button type="button" class="btn btn-primary" id="btn-blurred-download" onclick="triggerAuditExport()">Download FinOps Audit Bundle</button>
         </div>
 
         <!-- Lock Overlay -->
-        <div class="paywall-overlay">
+        <div class="paywall-overlay" id="finops-paywall-overlay">
           <div class="paywall-icon">🔐</div>
           <h3 class="paywall-title">Unlock Advanced FinOps & Multi-Agent Hierarchy</h3>
           <p class="paywall-desc">
             Prevent catastrophic bill shock across your entire agent swarm. Includes multi-persona fences, anomaly spike velocity triggers, and one-click compliance audit export.
           </p>
           <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center;">
-            <a href="https://buy.stripe.com/7sI7sA8hM2X8eFG8ww" target="_blank" rel="noopener" class="btn btn-primary">
+            <a href="https://buy.stripe.com/7sI7sA8hM2X8eFG8ww" target="_blank" rel="noopener" class="btn btn-primary" id="btn-overlay-stripe">
               <span>💳 Unlock Pro via Stripe ($19)</span>
             </a>
-            <button type="button" class="btn btn-solana" onclick="openDePayCheckout()">
+            <button type="button" class="btn btn-solana btn-depay-trigger" id="btn-overlay-solana" onclick="openDePayCheckout()">
               <span>⚡ Unlock via Solana ($19)</span>
             </button>
-            <button type="button" class="btn btn-outline" onclick="openPaywallModal('Enter License Key')">
+            <button type="button" class="btn btn-outline" id="btn-overlay-key" onclick="openPaywallModal('Enter License Key')">
               <span>Enter License Key</span>
             </button>
           </div>
@@ -455,10 +458,10 @@
         </ul>
 
         <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem; flex-wrap: wrap;">
-          <a href="https://buy.stripe.com/7sI7sA8hM2X8eFG8ww" target="_blank" rel="noopener" class="btn btn-primary" style="flex: 1; min-width: 180px;">
+          <a href="https://buy.stripe.com/7sI7sA8hM2X8eFG8ww" target="_blank" rel="noopener" class="btn btn-primary" id="modal-stripe-btn" style="flex: 1; min-width: 180px;">
             <span>💳 Stripe Checkout ($19)</span>
           </a>
-          <button type="button" class="btn btn-solana" onclick="openDePayCheckout()" style="flex: 1; min-width: 180px;" aria-label="Pay with Solana DePay">
+          <button type="button" class="btn btn-solana btn-depay-trigger" id="modal-solana-btn" onclick="openDePayCheckout()" style="flex: 1; min-width: 180px;" aria-label="Pay with Solana DePay">
             <span>⚡ Solana Pay ($19)</span>
           </button>
         </div>
@@ -466,8 +469,8 @@
         <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle);">
           <label for="licenseKeyInput" class="form-label">Already purchased? Enter receipt email or license key:</label>
           <div style="display: flex; gap: 0.5rem;">
-            <input type="text" id="licenseKeyInput" class="form-control text-mono" placeholder="SOVEREIGN-KEY-..." aria-label="License key input">
-            <button type="button" class="btn btn-outline" onclick="verifyLicenseKey()">Activate</button>
+            <input type="text" id="licenseKeyInput" class="form-control text-mono" placeholder="BUDGET-PRO-2026" aria-label="License key input">
+            <button type="button" class="btn btn-outline" id="btn-modal-activate" onclick="verifyLicenseKey()">Activate</button>
           </div>
         </div>
       </div>
