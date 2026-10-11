@@ -20,6 +20,26 @@ from .calculator import MODEL_PRICING, CostCalculator
 from .storage import BudgetStorage, TransactionRecord
 
 
+def _is_local_origin(origin) -> bool:
+    """Browser Origin check. No Origin header = non-browser client (CLI/agent): allowed.
+    Otherwise only http(s)://localhost / 127.0.0.1 / [::1] pages may call this API, so a
+    random website can't drive the local server from the user's browser (CSRF)."""
+    if not origin:
+        return True
+    from urllib.parse import urlparse
+    try:
+        u = urlparse(origin)
+    except ValueError:
+        return False
+    return u.scheme in ("http", "https") and u.hostname in ("localhost", "127.0.0.1", "::1")
+
+
+def _cors_origin(handler) -> str:
+    origin = handler.headers.get("Origin")
+    return origin if origin and _is_local_origin(origin) else "http://127.0.0.1"
+
+
+
 class WebDeckHandler(http.server.BaseHTTPRequestHandler):
     """Serves the avant-garde Web Deck and telemetry API."""
 
@@ -30,7 +50,7 @@ class WebDeckHandler(http.server.BaseHTTPRequestHandler):
 
     def do_OPTIONS(self) -> None:
         self.send_response(200)
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Origin", _cors_origin(self))
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "*")
         self.end_headers()
@@ -90,6 +110,14 @@ class WebDeckHandler(http.server.BaseHTTPRequestHandler):
         self._serve_static(path)
 
     def do_POST(self) -> None:
+        if not _is_local_origin(self.headers.get("Origin")):
+            _body = b'{"error": "cross-origin request blocked"}'
+            self.send_response(403)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(_body)))
+            self.end_headers()
+            self.wfile.write(_body)
+            return
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
 
@@ -250,7 +278,7 @@ class WebDeckHandler(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Type", "text/event-stream")
         self.send_header("Cache-Control", "no-cache")
         self.send_header("Connection", "keep-alive")
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Origin", _cors_origin(self))
         self.end_headers()
 
         q = self.server.storage.subscribe_sse()
@@ -300,7 +328,7 @@ class WebDeckHandler(http.server.BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(len(data)))
-            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Origin", _cors_origin(self))
             self.send_header("Cache-Control", "no-cache")
             self.end_headers()
             self.wfile.write(data)
@@ -313,7 +341,7 @@ class WebDeckHandler(http.server.BaseHTTPRequestHandler):
         body = json.dumps(data, indent=2).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Origin", _cors_origin(self))
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)

@@ -103,3 +103,7 @@ The server binds to `127.0.0.1` by default. To reach it from other devices,
 opt in explicitly with `--host 0.0.0.0` (or set `ZOTH_BIND_HOST=0.0.0.0`; an IP
 in `HOST` is also honoured, a plain hostname is ignored) and only on a trusted
 network.
+
+Browser requests are only accepted from `localhost` / `127.0.0.1` pages:
+cross-site POSTs get `403` and CORS never answers `*`, so a website you visit
+can't drive this local server. CLI and agent clients are unaffected.

@@ -19,6 +19,26 @@ from .breaker import BreakerState, CircuitBreaker
 from .calculator import CostCalculator
 from .storage import BudgetStorage, TransactionRecord
 
+
+def _is_local_origin(origin) -> bool:
+    """Browser Origin check. No Origin header = non-browser client (CLI/agent): allowed.
+    Otherwise only http(s)://localhost / 127.0.0.1 / [::1] pages may call this API, so a
+    random website can't drive the local server from the user's browser (CSRF)."""
+    if not origin:
+        return True
+    from urllib.parse import urlparse
+    try:
+        u = urlparse(origin)
+    except ValueError:
+        return False
+    return u.scheme in ("http", "https") and u.hostname in ("localhost", "127.0.0.1", "::1")
+
+
+def _cors_origin(handler) -> str:
+    origin = handler.headers.get("Origin")
+    return origin if origin and _is_local_origin(origin) else "http://127.0.0.1"
+
+
 logger = logging.getLogger("agent_budget_sentinel.proxy")
 
 
@@ -34,7 +54,7 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
     def do_OPTIONS(self) -> None:
         """Handle CORS preflight requests."""
         self.send_response(200)
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Origin", _cors_origin(self))
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "*")
         self.end_headers()
@@ -51,7 +71,7 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
             }, indent=2).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Origin", _cors_origin(self))
             self.send_header("Content-Length", str(len(resp)))
             self.end_headers()
             self.wfile.write(resp)
@@ -60,6 +80,14 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
         self._handle_forward()
 
     def do_POST(self) -> None:
+        if not _is_local_origin(self.headers.get("Origin")):
+            _body = b'{"error": "cross-origin request blocked"}'
+            self.send_response(403)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(_body)))
+            self.end_headers()
+            self.wfile.write(_body)
+            return
         """Evaluate budget, trip circuit if breached, or proxy upstream."""
         content_length = int(self.headers.get("Content-Length", 0))
         body_bytes = self.rfile.read(content_length) if content_length > 0 else b""
@@ -139,7 +167,7 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
 
         self.send_response(429)
         self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Origin", _cors_origin(self))
         self.send_header("X-Budget-State", "TRIPPED")
         self.send_header("X-Budget-Spend", f"{status['current_spend_usd']:.6f}")
         self.send_header("X-Budget-Limit", f"{status['max_budget_usd']:.2f}")
@@ -271,7 +299,7 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
             self.send_header(h_key, h_val)
 
         # Budget Sentinel Telemetry Headers
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Origin", _cors_origin(self))
         self.send_header("X-Budget-State", new_state.value)
         self.send_header("X-Budget-Cost-USD", f"{cost_usd:.6f}")
         self.send_header("X-Budget-Spend-USD", f"{status_snap['current_spend_usd']:.6f}")
@@ -345,7 +373,7 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
                 if h_key.lower() in ("content-length", "transfer-encoding", "connection", "content-encoding"):
                     continue
                 self.send_header(h_key, h_val)
-            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Origin", _cors_origin(self))
             self.send_header("Content-Length", str(len(resp_bytes)))
             self.end_headers()
             self.wfile.write(resp_bytes)
@@ -361,7 +389,7 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
             resp_bytes = json.dumps(err_obj).encode("utf-8")
             self.send_response(502)
             self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Origin", _cors_origin(self))
             self.send_header("Content-Length", str(len(resp_bytes)))
             self.end_headers()
             self.wfile.write(resp_bytes)
@@ -377,7 +405,7 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Type", "text/event-stream")
         self.send_header("Cache-Control", "no-cache")
         self.send_header("Connection", "close")
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Origin", _cors_origin(self))
         self.send_header("X-Budget-State", self.server.breaker.state.value)
         self.end_headers()
         self.close_connection = True
