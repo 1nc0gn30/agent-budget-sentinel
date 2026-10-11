@@ -93,7 +93,7 @@
   <div class="container">
     
     <!-- HIGH-CONVERTING SALES FUNNEL BANNER -->
-    <aside class="sales-banner border-beam" aria-label="Special Launch Offer">
+    <aside id="salesBanner" class="sales-banner border-beam" aria-label="Special Launch Offer">
       <div class="sales-banner-left">
         <span class="founding-badge">FOUNDING ACCESS</span>
         <div class="sales-banner-text">
@@ -119,12 +119,12 @@
         <img src="/assets/icon.png" alt="Agent Budget Sentinel Shield Logo" class="brand-icon" width="36" height="36">
         <h1 class="brand-title">
           AGENT BUDGET SENTINEL
-          <span class="brand-version">v1.0.0</span>
+          <span class="brand-version">v2.5 SOVEREIGN</span>
         </h1>
       </div>
       <div class="header-status">
         <span id="headerBreakerPill" class="status-pill status-closed">BREAKER: CLOSED</span>
-        <span id="pro-badge" class="badge">FREE TIER</span>
+        <span id="licenseBadge" class="badge" data-alias="pro-badge">⚡ FREE TIER</span>
         <button type="button" class="btn btn-outline" id="btn-header-key" style="min-height: 30px; padding: 0.2rem 0.65rem; font-size: 0.75rem;" onclick="openPaywallModal('Enter License Key')">🔑 Activate Pro</button>
       </div>
     </header>
@@ -436,7 +436,7 @@
     </main>
 
     <!-- PRO PAYWALL MODAL -->
-    <div id="paywallModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div id="paywallModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle" data-alias="licenseModal">
       <div class="modal-card">
         <button type="button" class="modal-close" onclick="closePaywallModal()" aria-label="Close dialog">&times;</button>
         
@@ -470,7 +470,7 @@
           <label for="licenseKeyInput" class="form-label">Already purchased? Enter receipt email or license key:</label>
           <div style="display: flex; gap: 0.5rem;">
             <input type="text" id="licenseKeyInput" class="form-control text-mono" placeholder="BUDGET-PRO-2026" aria-label="License key input">
-            <button type="button" class="btn btn-outline" id="btn-modal-activate" onclick="verifyLicenseKey()">Activate</button>
+            <button type="button" class="btn btn-outline" id="btn-modal-activate" data-alias="btnActivateKey" onclick="verifyLicenseKey()">Activate</button>
           </div>
         </div>
       </div>

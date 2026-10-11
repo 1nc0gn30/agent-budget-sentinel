@@ -1,0 +1,11 @@
+{
+  "name": "agent-budget-sentinel",
+  "version": "2.5.0",
+  "description": "Autonomous zero-dependency spending guardrail, real-time token cost circuit breaker, and runaway loop interceptor.",
+  "author": "Neal Frazier Tech (@1nc0gn30)",
+  "license": "MIT",
+  "scripts": {
+    "serve": "python3 -m http.server 8110 --directory public",
+    "test": "pytest tests"
+  }
+}

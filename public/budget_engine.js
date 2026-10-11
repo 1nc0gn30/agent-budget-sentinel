@@ -119,10 +119,15 @@ function initLicenseState() {
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get("licensed") === "true" || urlParams.get("session_id") || urlParams.get("pro") === "true") {
     localStorage.setItem("budget_sentinel_pro_license", "BUDGET-PRO-2026");
+    localStorage.setItem("agent_budget_pro", "BUDGET-PRO-2026");
+    localStorage.setItem("zoth_budget_licensed", "true");
     localStorage.setItem("pro_licensed", "true");
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }
 
-  const savedLicense = localStorage.getItem("budget_sentinel_pro_license") || localStorage.getItem("pro_licensed");
+  const savedLicense = localStorage.getItem("budget_sentinel_pro_license") || localStorage.getItem("agent_budget_pro") || localStorage.getItem("zoth_budget_licensed") || localStorage.getItem("pro_licensed");
   if (savedLicense) {
     activateProState();
   }
@@ -132,8 +137,10 @@ function activateProState() {
   isPro = true;
   localStorage.setItem("pro_licensed", "true");
   localStorage.setItem("budget_sentinel_pro_license", "BUDGET-PRO-2026");
+  localStorage.setItem("agent_budget_pro", "BUDGET-PRO-2026");
+  localStorage.setItem("zoth_budget_licensed", "true");
   
-  const badge1 = document.getElementById("pro-badge");
+  const badge1 = document.getElementById("licenseBadge") || document.getElementById("pro-badge");
   if (badge1) {
     badge1.textContent = "⭐ PRO ACTIVE";
     badge1.className = "badge badge-pro";
@@ -142,6 +149,12 @@ function activateProState() {
   if (badge2) {
     badge2.textContent = "⭐ PRO ACTIVE";
     badge2.className = "badge badge-pro";
+  }
+
+  // Hide sales banner
+  const salesBanner = document.getElementById("salesBanner");
+  if (salesBanner) {
+    salesBanner.style.display = "none";
   }
 
   // Remove paywall blurs
@@ -164,6 +177,16 @@ function activateProState() {
   closeCryptoModal();
   showToast("⭐ Sovereign Pro License Active — All Features Unlocked!");
 }
+
+window.activateLicenseKey = function(key) {
+  if (!key) key = "BUDGET-PRO-2026";
+  localStorage.setItem("budget_sentinel_pro_license", key);
+  localStorage.setItem("agent_budget_pro", key);
+  localStorage.setItem("zoth_budget_licensed", "true");
+  localStorage.setItem("pro_licensed", "true");
+  activateProState();
+  return true;
+};
 
 function openPaywallModal(featureName = "Advanced FinOps Mode") {
   if (isPro) return;
@@ -202,20 +225,28 @@ function copyWalletAddress(coin) {
   const addr = coin === 'sol'
     ? 'GG2eQbVh8ut1BK6j1A2tz7pSySdLpD38BgyEhGcxdXoK'
     : 'bc1p2dr247zklh8pnffak0ew7m82u2w8gx25ys28x7aavr95z674ydzsfw500t';
-  navigator.clipboard.writeText(addr).then(() => {
-    showToast(`✓ Copied ${coin.toUpperCase()} address!`);
-  }).catch(() => {
-    prompt(`Copy ${coin.toUpperCase()} address:`, addr);
-  });
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(addr).then(() => {
+      showToast(`✓ Copied ${coin.toUpperCase()} address!`);
+    }).catch(() => {
+      showToast(`Address: ${addr}`);
+    });
+  } else {
+    showToast(`Address: ${addr}`);
+  }
 }
 
 function copyConfigCommand() {
   const cmd = `export OPENAI_BASE_URL="http://127.0.0.1:8111/v1"\nagent-budget run -- python my_agent.py`;
-  navigator.clipboard.writeText(cmd).then(() => {
-    showToast("✓ Copied proxy startup command!");
-  }).catch(() => {
-    prompt("Copy proxy command:", cmd);
-  });
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(cmd).then(() => {
+      showToast("✓ Copied proxy startup command!");
+    }).catch(() => {
+      showToast("Proxy URL: http://127.0.0.1:8111/v1");
+    });
+  } else {
+    showToast("Proxy URL: http://127.0.0.1:8111/v1");
+  }
 }
 
 function verifyLicenseKey() {
@@ -223,10 +254,13 @@ function verifyLicenseKey() {
   const key = input ? input.value.trim() : "";
   if (key.length >= 6) {
     localStorage.setItem("budget_sentinel_pro_license", key);
+    localStorage.setItem("agent_budget_pro", key);
+    localStorage.setItem("zoth_budget_licensed", "true");
+    localStorage.setItem("pro_licensed", "true");
     activateProState();
-    alert("✓ Sovereign Pro License Verified! All Advanced Guardrails & Export Modes Unlocked.");
+    showToast("✓ Sovereign Pro License Verified! All Advanced Guardrails & Export Modes Unlocked.");
   } else {
-    alert("Please enter a valid license key or receipt email (min 6 characters).");
+    showToast("Please enter a valid license key or receipt email (min 6 characters).");
   }
 }
 
@@ -451,7 +485,7 @@ function initBreakerControls() {
       const input = document.getElementById("inputNewBudget");
       const val = parseFloat(input ? input.value : 5);
       if (isNaN(val) || val <= 0) {
-        alert("Please enter a valid dollar amount > $0");
+        showToast("Please enter a valid dollar amount > $0");
         return;
       }
 
@@ -464,7 +498,7 @@ function initBreakerControls() {
           });
           const data = await res.json();
           renderStats(data.breaker);
-          alert(`✓ Budget ceiling successfully set to $${val.toFixed(2)} USD.`);
+          showToast(`✓ Budget ceiling set to $${val.toFixed(2)} USD`);
           return;
         } catch (e) {}
       }
@@ -482,10 +516,6 @@ function initBreakerControls() {
   const tripBtn = document.getElementById("btnTripBreaker");
   if (tripBtn) {
     tripBtn.addEventListener("click", async () => {
-      if (!confirm("Are you sure you want to engage the EMERGENCY KILL SWITCH? This will immediately halt all outbound AI requests.")) {
-        return;
-      }
-
       if (isLiveBackend) {
         try {
           const res = await fetch("/api/trip", {
@@ -512,7 +542,7 @@ function initBreakerControls() {
   const resetBtn = document.getElementById("btnResetBreaker");
   if (resetBtn) {
     resetBtn.addEventListener("click", async () => {
-      const clearHistory = confirm("Do you also want to clear historical spend data back to $0.00?");
+      const clearHistory = false;
 
       if (isLiveBackend) {
         try {
@@ -557,7 +587,7 @@ function initBreakerControls() {
           });
           const data = await res.json();
           if (data.allowed === false) {
-            alert(`💥 BREAKER TRIPPED! Request blocked with HTTP 429:\n\n${data.reason}`);
+            showToast(`💥 BREAKER TRIPPED! Blocked: ${data.reason}`);
           }
           renderStats(data.breaker);
           return;
@@ -601,7 +631,7 @@ function initBreakerControls() {
       renderTransactionsTable(currentTransactions);
 
       if (isTripped) {
-        alert(`💥 BREAKER TRIPPED! Request blocked with HTTP 429:\n\n${currentStats.trip_reason}`);
+        showToast(`💥 BREAKER TRIPPED! Blocked: ${currentStats.trip_reason}`);
       } else {
         showToast(`✓ Intercepted 1 call (${model}): +$${callCost.toFixed(5)}`);
       }
@@ -626,7 +656,7 @@ function initBreakerControls() {
             const data = await res.json();
             renderStats(data.breaker);
             if (data.tripped_at_iteration) {
-              alert(`⚡ Runaway loop successfully INTERCEPTED at burst iteration #${data.tripped_at_iteration}!\n\nCircuit breaker TRIPPED into safety lock.`);
+              showToast(`⚡ Runaway loop INTERCEPTED at burst iteration #${data.tripped_at_iteration}!`);
             }
             return;
           } catch (e) {}
@@ -683,13 +713,13 @@ function initBreakerControls() {
         renderTransactionsTable(currentTransactions);
 
         if (trippedAt) {
-          alert(`⚡ Runaway loop successfully INTERCEPTED at burst iteration #${trippedAt}!\n\nCircuit breaker TRIPPED into safety lock.`);
+          showToast(`⚡ Runaway loop INTERCEPTED at burst iteration #${trippedAt}!`);
         } else {
           showToast(`⚡ Completed burst simulation of 12 calls`);
         }
 
       } catch (e) {
-        alert("Simulation burst failed.");
+        showToast("Simulation burst failed.");
       } finally {
         simRunawayBtn.disabled = false;
         simRunawayBtn.textContent = "⚡ Simulate Runaway Loop Burst";
@@ -724,7 +754,7 @@ async function exportAuditLedger(format = 'json') {
   }
 
   if (!txs || txs.length === 0) {
-    alert("No transaction records available to export yet. Run agent calls or simulation bursts first!");
+    showToast("No transaction records available to export yet. Run agent calls or simulation bursts first!");
     return;
   }
 
