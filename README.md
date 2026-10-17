@@ -1,5 +1,9 @@
 # ⚡ Agent Budget Sentinel
 
+> ⚡ **Live Web Application**: [https://agent-budget-sentinel.netlify.app](https://agent-budget-sentinel.netlify.app)  
+> 💳 **Unlock Pro Lifetime License ($19 One-Time, $0/mo)**: **[Instant Pro Unlock via Stripe](https://buy.stripe.com/4gMfZg9AheOsdhKbcAfw40L)** *(Use promo code `FOUNDER25` for 25% off)*  
+> 🏆 **All-Access Sovereign Pro Bundle (All 44 Tools — $49 Lifetime)**: **[Get All 44 Studios via Stripe](https://buy.stripe.com/eVq14m5k16hW4Le0xWfw40M)**
+
 **Autonomous LLM Token Cost Circuit Breaker & Inline Spending Guardrail for AI Agents**  
 *Engineered by Neal Frazier Tech ([@1nc0gn30](https://github.com/1nc0gn30)) • NullAI Platform*
 
