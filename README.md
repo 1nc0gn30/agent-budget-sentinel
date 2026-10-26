@@ -1,3 +1,9 @@
+<div align="center">
+  <img src="assets/hero-banner.svg" alt="Agent Budget Sentinel — Sovereign Architecture Banner" width="100%" />
+</div>
+
+<br />
+
 # ⚡ Agent Budget Sentinel
 
 > ⚡ **Live Web Application**: [https://agent-budget-sentinel.netlify.app](https://agent-budget-sentinel.netlify.app)  
