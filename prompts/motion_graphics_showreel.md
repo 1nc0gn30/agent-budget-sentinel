@@ -60,7 +60,7 @@
 - **SFX**: Tactile mechanical keystrokes, ambient stereo synth pad, smooth UI slide transients.
 
 ### Scene 4: Sovereign Call to Action & Founding Access (11.40s – 15.00s / Frames 342 – 450)
-- **Visuals**: Glassmorphic sales card slides up into focus with a pure CSS conic border beam traveling around its perimeter. Strikethrough pricing `$79` drops to glowing emerald `$19 Lifetime Founding License`. Dual Stripe card and Solana DePay Web3 badges flash in unison.
+- **Visuals**: Glassmorphic sales card slides up into focus with a pure CSS conic border beam traveling around its perimeter. Strikethrough pricing `$79` drops to glowing emerald `$19 Lifetime Founding License`. Dual Stripe card and Solana Tip Web3 badges flash in unison.
 - **Centerpiece**: The Chrono-Vault Aegis sits in sovereign gold (`#D4AF37`) with radiant emerald and ruby circuit coils orbiting in a majestic 60fps axial loop.
 - **Typography**:
   - `"PROTECT YOUR TREASURY. RUN AUTONOMOUSLY."`

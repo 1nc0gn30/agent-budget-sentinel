@@ -1,0 +1,142 @@
+/* ==========================================================================
+   AGENT BUDGET SENTINEL — WAVE 5 TOOL SURFACE REFINEMENTS
+   Strong Visual Idea: High-Precision Sovereign Telemetry Cockpit
+   - Clear type hierarchy & tabular alignment
+   - High-contrast visible focus rings for keyboard navigation
+   - Sub-second transform/opacity reveal for incoming telemetry results
+   - Strict prefers-reduced-motion support
+   ========================================================================== */
+
+/* 1. TYPE HIERARCHY & TABULAR DATA PRECISION */
+.card-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #F1F5F9;
+}
+
+.metric-large {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "zero" 1;
+  letter-spacing: -0.02em;
+  color: #FFFFFF;
+}
+
+.metric-sub {
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #94A3B8;
+  font-weight: 600;
+}
+
+.text-mono {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "zero" 1;
+}
+
+.form-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #CBD5E1;
+  margin-bottom: 0.45rem;
+}
+
+.form-control {
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: 0.01em;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+th {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  color: #94A3B8;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+  padding: 0.85rem 0.85rem;
+}
+
+td {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "zero" 1;
+  padding: 0.8rem 0.85rem;
+  color: #E2E8F0;
+}
+
+tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+/* 2. HIGH-CONTRAST ACCESSIBLE VISIBLE FOCUS */
+.btn:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.25);
+}
+
+.btn-solana:focus-visible {
+  outline-color: #14F195;
+  box-shadow: 0 0 0 4px rgba(20, 241, 149, 0.25);
+}
+
+.btn-danger:focus-visible {
+  outline-color: var(--ruby);
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.3);
+}
+
+.btn-success:focus-visible {
+  outline-color: var(--emerald);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.3);
+}
+
+.form-control:focus-visible,
+.form-control:focus {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.22);
+}
+
+/* 3. RESULT ENTRANCE MOTION (Transform + Opacity) */
+@keyframes sentinelResultReveal {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#txTableBody tr {
+  animation: sentinelResultReveal 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+#txTableBody tr:nth-child(1) { animation-delay: 0ms; }
+#txTableBody tr:nth-child(2) { animation-delay: 25ms; }
+#txTableBody tr:nth-child(3) { animation-delay: 50ms; }
+#txTableBody tr:nth-child(4) { animation-delay: 75ms; }
+#txTableBody tr:nth-child(5) { animation-delay: 100ms; }
+
+.trip-reason-banner {
+  animation: sentinelResultReveal 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* 4. PREFERS-REDUCED-MOTION SUPPORT */
+@media (prefers-reduced-motion: reduce) {
+  #txTableBody tr,
+  .trip-reason-banner,
+  .btn,
+  .form-control {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}

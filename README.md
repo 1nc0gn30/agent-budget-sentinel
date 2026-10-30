@@ -6,9 +6,9 @@
 
 # ⚡ Agent Budget Sentinel
 
-> ⚡ **Live Web Application**: [https://agent-budget-sentinel.netlify.app](https://agent-budget-sentinel.netlify.app)  
-> 💳 **Unlock Pro Lifetime License ($19 One-Time, $0/mo)**: **[Instant Pro Unlock via Stripe](https://buy.stripe.com/4gMfZg9AheOsdhKbcAfw40L)** *(Use promo code `FOUNDER25` for 25% off)*  
-> 🏆 **All-Access Sovereign Pro Bundle (All 44 Tools — $49 Lifetime)**: **[Get All 44 Studios via Stripe](https://buy.stripe.com/eVq14m5k16hW4Le0xWfw40M)**
+> ⚡ **Live Web Application**: [https://agent-budget-sentinel.nullai.tech](https://agent-budget-sentinel.nullai.tech)  
+> ✦ **100% Free & Open-Access Sovereign Developer Tool**: Zero paywalls, zero license keys, zero gatekeepers.  
+> ☕ **Buy Us a Coffee**: **[Support via Stripe](https://buy.stripe.com/3cIfZg27PdKo2D64Ocfw40X)** | **Solana Tip**: `GG2eQbVh8ut1BK6j1A2tz7pSySdLpD38BgyEhGcxdXoK`  
 
 **Autonomous LLM Token Cost Circuit Breaker & Inline Spending Guardrail for AI Agents**  
 *Engineered by Neal Frazier Tech ([@1nc0gn30](https://github.com/1nc0gn30)) • NullAI Platform*
@@ -43,10 +43,9 @@ Autonomous AI agents running recursive tool loops, multi-agent debates, and self
    - Real-time Server-Sent Events (SSE) telemetry radar.
    - Interactive Try-Before-You-Buy token cost calculator.
    - Emergency operator kill switch and burst test simulation harness.
-5. **Dual Cash Registers & Monetization Funnel**:
-   - Above-the-fold high-converting sales banner ($19 founding lifetime vs $79 regular).
-   - Stripe & DePay Solana instant activation rails.
-   - Frosted glass output paywall over advanced multi-agent quota hierarchy modes.
+5. **100% Free & Open-Access Architecture (Zero Paywalls)**:
+   - 100% unlocked tools, export utilities, and multi-agent quota fences.
+   - Voluntary community support via **Stripe Buy Us a Coffee** (`https://buy.stripe.com/3cIfZg27PdKo2D64Ocfw40X`) and **Solana Tip Address** (`GG2eQbVh8ut1BK6j1A2tz7pSySdLpD38BgyEhGcxdXoK`).
 
 ---
 

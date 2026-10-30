@@ -124,13 +124,36 @@ def cmd_serve(args: argparse.Namespace) -> None:
 
 
 def cmd_status(args: argparse.Namespace) -> None:
-    url = f"http://{args.host}:{args.port}/api/stats"
+    host = getattr(args, "host", "127.0.0.1")
+    port = getattr(args, "port", 8110)
+    url = f"http://{host}:{port}/api/stats"
+    data = {}
+    online = True
     try:
         req = urllib.request.Request(url)
         with urllib.request.urlopen(req, timeout=5.0) as resp:
             data = json.loads(resp.read().decode("utf-8"))
     except Exception as e:
-        print(f"{C_RED}Error connecting to agent-budget-sentinel at {url}: {e}{C_RESET}")
+        online = False
+        data = {"error": str(e), "state": "OFFLINE"}
+
+    if getattr(args, "json", False):
+        print(json.dumps({
+            "service": "agent-budget-sentinel",
+            "version": "2.5.0",
+            "online": online,
+            "port": port,
+            "stats": data,
+            "license": "100% Free & Open Access (Zero Paywalls)",
+            "support": {
+                "stripe": "https://buy.stripe.com/3cIfZg27PdKo2D64Ocfw40X",
+                "solana": "GG2eQbVh8ut1BK6j1A2tz7pSySdLpD38BgyEhGcxdXoK"
+            }
+        }, indent=2))
+        sys.exit(0 if online else 1)
+
+    if not online:
+        print(f"{C_RED}Error connecting to agent-budget-sentinel at {url}: {data.get('error')}{C_RESET}")
         sys.exit(1)
 
     print_banner()
@@ -218,7 +241,13 @@ def main() -> None:
         prog="agent-budget",
         description="Autonomous spending guardrail and token cost circuit breaker for AI agents."
     )
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    parser.add_argument("-v", "--version", action="version", version="agent-budget-sentinel 2.5.0")
+    parser.add_argument("--status", action="store_true", help="Display budget telemetry")
+    parser.add_argument("--json", action="store_true", help="Output telemetry in JSON")
+    parser.add_argument("--host", default="127.0.0.1", help="Host interface")
+    parser.add_argument("--port", type=int, default=8110, help="Web port (default 8110)")
+
+    subparsers = parser.add_subparsers(dest="command", required=False)
 
     # serve
     p_serve = subparsers.add_parser("serve", help="Launch Web Deck and Inline Proxy")
@@ -234,6 +263,7 @@ def main() -> None:
     p_status = subparsers.add_parser("status", help="Display current budget telemetry")
     p_status.add_argument("--host", default="127.0.0.1")
     p_status.add_argument("--port", type=int, default=8110)
+    p_status.add_argument("--json", action="store_true", help="Output telemetry in structured JSON")
 
     # trip
     p_trip = subparsers.add_parser("trip", help="Manually trip the circuit breaker")
@@ -259,6 +289,10 @@ def main() -> None:
 
     args, remaining = parser.parse_known_args()
 
+    if getattr(args, "status", False) or (getattr(args, "json", False) and not args.command):
+        cmd_status(args)
+        return
+
     if args.command == "serve":
         cmd_serve(args)
     elif args.command == "status":
@@ -271,6 +305,8 @@ def main() -> None:
         cmd_set_budget(args)
     elif args.command == "run":
         cmd_run(args, remaining)
+    else:
+        parser.print_help()
 
 
 if __name__ == "__main__":

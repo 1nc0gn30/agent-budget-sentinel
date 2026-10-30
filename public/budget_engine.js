@@ -97,7 +97,7 @@ const DEFAULT_TRANSACTIONS = [
   }
 ];
 
-let isPro = false;
+let isPro = true;
 let eventSource = null;
 let currentStats = { ...DEFAULT_STATS };
 let currentTransactions = [ ...DEFAULT_TRANSACTIONS ];
@@ -114,23 +114,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// --- Licensing & Monetization ---
+// --- Licensing & Monetization — 100% Free & Open Access Invariant ---
 function initLicenseState() {
-  const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get("licensed") === "true" || urlParams.get("session_id") || urlParams.get("pro") === "true") {
-    localStorage.setItem("budget_sentinel_pro_license", "BUDGET-PRO-2026");
-    localStorage.setItem("agent_budget_pro", "BUDGET-PRO-2026");
-    localStorage.setItem("zoth_budget_licensed", "true");
-    localStorage.setItem("pro_licensed", "true");
-    if (window.history && window.history.replaceState) {
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }
-
-  const savedLicense = localStorage.getItem("budget_sentinel_pro_license") || localStorage.getItem("agent_budget_pro") || localStorage.getItem("zoth_budget_licensed") || localStorage.getItem("pro_licensed");
-  if (savedLicense) {
-    activateProState();
-  }
+  activateProState();
 }
 
 function activateProState() {
@@ -142,13 +128,25 @@ function activateProState() {
   
   const badge1 = document.getElementById("licenseBadge") || document.getElementById("pro-badge");
   if (badge1) {
-    badge1.textContent = "⭐ PRO ACTIVE";
-    badge1.className = "badge badge-pro";
+    badge1.textContent = "✦ 100% OPEN ACCESS";
+    badge1.style.background = "rgba(16,185,129,0.2)";
+    badge1.style.color = "#10B981";
+    badge1.style.borderColor = "rgba(16,185,129,0.5)";
   }
   const badge2 = document.getElementById("proStatusBadge");
   if (badge2) {
-    badge2.textContent = "⭐ PRO ACTIVE";
-    badge2.className = "badge badge-pro";
+    badge2.textContent = "✦ 100% OPEN ACCESS";
+    badge2.style.background = "rgba(16,185,129,0.2)";
+    badge2.style.color = "#10B981";
+    badge2.style.borderColor = "rgba(16,185,129,0.5)";
+  }
+
+  const btnKey = document.getElementById("btn-header-key");
+  if (btnKey) {
+    btnKey.textContent = "☕ Buy Us a Coffee";
+    btnKey.onclick = function() {
+      window.open("https://buy.stripe.com/3cIfZg27PdKo2D64Ocfw40X", "_blank");
+    };
   }
 
   // Hide sales banner
@@ -175,17 +173,11 @@ function activateProState() {
   // Close modal if open
   closePaywallModal();
   closeCryptoModal();
-  showToast("⭐ Sovereign Pro License Active — All Features Unlocked!");
 }
 
 window.activateLicenseKey = function(key) {
-  if (!key) key = "BUDGET-PRO-2026";
-  localStorage.setItem("budget_sentinel_pro_license", key);
-  localStorage.setItem("agent_budget_pro", key);
-  localStorage.setItem("zoth_budget_licensed", "true");
-  localStorage.setItem("pro_licensed", "true");
   activateProState();
-  return true;
+  showToast("✓ All features 100% free & open-access.");
 };
 
 function openPaywallModal(featureName = "Advanced FinOps Mode") {
@@ -213,9 +205,7 @@ function closeCryptoModal() {
 
 function openDePayCheckout() {
   if (typeof DePayWidgets !== 'undefined' && DePayWidgets.Payment) {
-    DePayWidgets.Payment({
-      integration: '428790dd-7ad1-407c-8ecf-c048c77a4cb8'
-    });
+    (navigator.clipboard && navigator.clipboard.writeText('GG2eQbVh8ut1BK6j1A2tz7pSySdLpD38BgyEhGcxdXoK'));
   } else {
     openCryptoModal();
   }
@@ -734,11 +724,6 @@ function triggerAuditExport() {
 }
 
 async function exportAuditLedger(format = 'json') {
-  if (!isPro) {
-    openPaywallModal(`FinOps Compliance Exporter (${format.toUpperCase()})`);
-    return;
-  }
-
   let txs = currentTransactions;
 
   if (isLiveBackend) {
@@ -812,7 +797,7 @@ function showToast(msg) {
 function escapeHtml(str) {
   if (!str) return "";
   return String(str)
-    .replace(/&/g, "&amp;")
+    .replace(/&/g, "&")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
