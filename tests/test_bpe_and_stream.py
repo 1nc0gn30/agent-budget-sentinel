@@ -89,7 +89,7 @@ class TestBPETokenizer(unittest.TestCase):
             "def calculate_cost(model_name: str, prompt_tokens: int, completion_tokens: int = 0) -> CostResult:\n    pricing = cls.get_pricing(model_name)\n    return round(in_cost, 6)",
             "The quick brown fox jumps over the lazy dog. 1234567890 !@#$%^&*()",
             'JSON payload: {"model": "gpt-4o", "messages": [{"role": "user", "content": "Explain quantum computing."}]}',
-            "System prompt: You are Vulcan-Core, the Senior Systems Kernel Engineer for Neal Frazier Tech.",
+            "System prompt: You are Vulcan-Core, the Senior Systems Kernel Engineer for 1nc0gn30 • NullAI.",
             "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
             'SELECT u.id, u.name, COUNT(o.id) FROM users u LEFT JOIN orders o ON u.id = o.user_id WHERE u.created_at >= "2024-01-01" GROUP BY u.id;',
             'curl -X POST https://api.openai.com/v1/chat/completions -H "Authorization: Bearer sk-123" -H "Content-Type: application/json"',

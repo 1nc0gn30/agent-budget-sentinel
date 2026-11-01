@@ -15,3 +15,14 @@ venv/
 *.db
 !data/example.db
 .DS_Store
+
+.venv/
+.venv*/
+node_modules/
+*.pth
+*.onnx
+data/minds/spool.jsonl
+release-artifacts/
+build/*.iso*
+build/live_workspace/
+build/release-*/

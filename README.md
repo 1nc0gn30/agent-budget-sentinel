@@ -11,7 +11,7 @@
 > ☕ **Buy Us a Coffee**: **[Support via Stripe](https://buy.stripe.com/3cIfZg27PdKo2D64Ocfw40X)** | **Solana Tip**: `GG2eQbVh8ut1BK6j1A2tz7pSySdLpD38BgyEhGcxdXoK`  
 
 **Autonomous LLM Token Cost Circuit Breaker & Inline Spending Guardrail for AI Agents**  
-*Engineered by Neal Frazier Tech ([@1nc0gn30](https://github.com/1nc0gn30)) • NullAI Platform*
+*Engineered by 1nc0gn30 • NullAI ([@1nc0gn30](https://github.com/1nc0gn30)) • NullAI Platform*
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-gold.svg)](https://www.python.org/downloads/)
 [![Zero External Dependencies](https://img.shields.io/badge/dependencies-zero_pip-emerald.svg)](#architecture)
@@ -67,7 +67,7 @@ chmod +x bin/agent-budget
 
 ```bash
 # Option 1: Using OpenAI environment variable
-export OPENAI_BASE_URL="http://127.0.0.1:8111/v1"
+export OPENAI_BASE_URL="http://127.0.0.1:8110 (Web Deck) & 127.0.0.1:8111 (Proxy)/v1"
 python my_agent.py
 
 # Option 2: Automatic wrapper
@@ -103,7 +103,7 @@ All tests execute with 100% standard library compliance and sub-second execution
 
 ## 📜 License & Sovereign Attribution
 
-Engineered by **Neal Frazier Tech** ([@1nc0gn30](https://github.com/1nc0gn30)) • [NullAI Platform](https://nullai.tech).  
+Engineered by **1nc0gn30 • NullAI** ([@1nc0gn30](https://github.com/1nc0gn30)) • [NullAI Platform](https://nullai.tech).  
 Licensed under the MIT License.
 
 ## Network exposure

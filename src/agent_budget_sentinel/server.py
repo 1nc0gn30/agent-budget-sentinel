@@ -249,7 +249,7 @@ class WebDeckHandler(http.server.BaseHTTPRequestHandler):
             tripped_at_iter = None
             
             for i in range(iterations):
-                p_cost = CostCalculator.calculate_cost(model, 3000, 1000)
+                p_cost = CostCalculator.calculate_cost_usd(model, 3000, 1000)
                 allowed, state, reason = self.server.breaker.evaluate_request(p_cost)
                 if not allowed:
                     tripped_at_iter = i + 1

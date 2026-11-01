@@ -1,7 +1,7 @@
 """agent-budget-sentinel
 
 Autonomous zero-dependency spending guardrail and token cost circuit breaker for AI agents.
-Engineered by Neal Frazier Tech (@1nc0gn30) • NullAI Platform.
+Engineered by 1nc0gn30 (@1nc0gn30) • NullAI Platform.
 """
 
 from .calculator import CostCalculator, ModelPricing, MODEL_PRICING

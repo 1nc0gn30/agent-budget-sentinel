@@ -1,7 +1,7 @@
 /**
  * AGENT BUDGET SENTINEL — In-Browser Telemetry & Value Realization Engine
  * Zero Fake Work — 100% Real Working Utility.
- * Engineered by Neal Frazier Tech (@1nc0gn30) • NullAI Platform.
+ * Engineered by 1nc0gn30 (@1nc0gn30) • NullAI Platform.
  */
 
 // Model Pricing Database (Per 1 Million Tokens in USD)
@@ -203,8 +203,8 @@ function closeCryptoModal() {
   if (modal) modal.style.display = "none";
 }
 
-function openDePayCheckout() {
-  if (typeof DePayWidgets !== 'undefined' && DePayWidgets.Payment) {
+function openSolanaTipCheckout() {
+  if (typeof SolanaTipWidgets !== 'undefined' && SolanaTipWidgets.Payment) {
     (navigator.clipboard && navigator.clipboard.writeText('GG2eQbVh8ut1BK6j1A2tz7pSySdLpD38BgyEhGcxdXoK'));
   } else {
     openCryptoModal();
@@ -276,6 +276,8 @@ async function fetchStats() {
 }
 
 function renderStats(data) {
+  if (!data) return;
+  currentStats = { ...currentStats, ...data };
   const stateEl = document.getElementById("breakerStateBadge");
   const headerPill = document.getElementById("headerBreakerPill");
   const spendEl = document.getElementById("currentSpendVal");
