@@ -146,8 +146,7 @@ def cmd_status(args: argparse.Namespace) -> None:
             "stats": data,
             "license": "100% Free & Open Access (Zero Paywalls)",
             "support": {
-                "stripe": "https://buy.stripe.com/3cIfZg27PdKo2D64Ocfw40X",
-                "solana": "GG2eQbVh8ut1BK6j1A2tz7pSySdLpD38BgyEhGcxdXoK"
+                "stripe": "https://buy.stripe.com/3cIfZg27PdKo2D64Ocfw40X"
             }
         }, indent=2))
         sys.exit(0 if online else 1)

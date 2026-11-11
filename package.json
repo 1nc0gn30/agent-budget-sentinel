@@ -1,11 +1,13 @@
 {
   "name": "agent-budget-sentinel",
   "version": "2.5.0",
-  "description": "Autonomous zero-dependency spending guardrail, real-time token cost circuit breaker, and runaway loop interceptor.",
-  "author": "1nc0gn30 (@1nc0gn30)",
+  "description": "Zero-dependency spending guardrail, real-time token cost circuit breaker, and runaway loop interceptor for AI agents.",
+  "author": "1nc0gn30 (@1nc0gn30) • NullAI",
   "license": "MIT",
   "scripts": {
-    "serve": "python3 -m http.server 8110 --directory public",
-    "test": "pytest tests"
+    "start": "python3 server.py --web-port 8110 --proxy-port 8111",
+    "serve": "python3 server.py --web-port 8110 --proxy-port 8111",
+    "serve:public": "python3 -m http.server 8110 --directory public",
+    "test": "PYTHONPATH=src python3 -m pytest -q tests"
   }
 }

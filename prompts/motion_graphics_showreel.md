@@ -74,7 +74,7 @@
 
 ### Option A: Revid.ai / Claude Opus Motion Prompt
 ```text
-Act as a world-class motion graphics director. Generate a 15-second cinematic motion graphics showreel (1920x1080 @ 60fps) for AGENT BUDGET SENTINEL.
+Act as a senior motion graphics director. Generate a 15-second cinematic motion graphics showreel (1920x1080 @ 60fps) for AGENT BUDGET SENTINEL.
 Hero Anchor Shape: The Chrono-Vault Aegis — an interlocking multi-tiered golden obsidian shield #D4AF37 surrounded by dual helical circuit coils (emerald #10B981 and ruby #EF4444).
 Scene 1 (0:00-0:03): Terminal cockpit #08080B. Token counter accelerates wildly (0 -> 482k tokens, $0.10 -> $5.00). Kinetic typography: 'AN INFINITE LOOP IS BLEEDING YOUR API TREASURY.'
 Scene 2 (0:03-0:07): At $5.00, mechanical calipers snap shut. Chrono-Vault Aegis locks into place; coils erupt from emerald to searing ruby #EF4444. Shockwave expands. 'HTTP 429: HARD BRAKE APPLIED. ZERO CLOUD OVERAGES.'
