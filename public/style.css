@@ -608,60 +608,7 @@ td {
 .badge-danger { background: rgba(239, 68, 68, 0.15); color: #EF4444; }
 
 /* ==========================================================================
-   FROSTED GLASS BLUR PAYWALL & LOCK OVERLAYS
-   ========================================================================== */
-.paywall-wrapper {
-  position: relative;
-}
-
-.paywall-blurred {
-  filter: blur(6px);
-  pointer-events: none;
-  user-select: none;
-  opacity: 0.45;
-  transition: filter 0.4s ease, opacity 0.4s ease;
-}
-
-.paywall-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: rgba(8, 8, 11, 0.75);
-  backdrop-filter: blur(4px);
-  border: 1px solid var(--gold);
-  border-radius: 14px;
-  z-index: 10;
-  padding: 1.5rem;
-  text-align: center;
-}
-
-.paywall-icon {
-  font-size: 2.2rem;
-  margin-bottom: 0.5rem;
-}
-
-.paywall-title {
-  font-size: 1.35rem;
-  font-weight: 800;
-  color: var(--gold);
-  margin-bottom: 0.5rem;
-}
-
-.paywall-desc {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  max-width: 480px;
-  margin-bottom: 1.25rem;
-}
-
-/* ==========================================================================
-   MODAL DIALOG (Pro Paywall Matrix)
+   MODAL DIALOG
    ========================================================================== */
 .modal-backdrop {
   position: fixed;

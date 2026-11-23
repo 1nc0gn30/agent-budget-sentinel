@@ -149,48 +149,8 @@ function activateProState() {
     };
   }
 
-  // Hide sales banner
-  const salesBanner = document.getElementById("salesBanner");
-  if (salesBanner) {
-    salesBanner.style.display = "none";
-  }
-
-  // Remove paywall blurs
-  const blurredPanels = document.querySelectorAll(".paywall-blurred");
-  blurredPanels.forEach(el => {
-    el.classList.remove("paywall-blurred");
-    el.style.filter = "none";
-    el.style.pointerEvents = "auto";
-    el.style.opacity = "1";
-  });
-
-  // Hide paywall overlay
-  const overlays = document.querySelectorAll(".paywall-overlay");
-  overlays.forEach(el => {
-    el.style.display = "none";
-  });
-
-  // Close modal if open
-  closePaywallModal();
+  // Close support modal if open
   closeCryptoModal();
-}
-
-window.activateLicenseKey = function(key) {
-  activateProState();
-  showToast("✓ All features 100% free & open-access.");
-};
-
-function openPaywallModal(featureName = "Advanced FinOps Mode") {
-  if (isPro) return;
-  const modal = document.getElementById("paywallModal");
-  const featEl = document.getElementById("modalFeatureName");
-  if (featEl) featEl.textContent = featureName;
-  if (modal) modal.style.display = "flex";
-}
-
-function closePaywallModal() {
-  const modal = document.getElementById("paywallModal");
-  if (modal) modal.style.display = "none";
 }
 
 function openCryptoModal() {
@@ -236,21 +196,6 @@ function copyConfigCommand() {
     });
   } else {
     showToast("Proxy URL: http://127.0.0.1:8111/v1");
-  }
-}
-
-function verifyLicenseKey() {
-  const input = document.getElementById("licenseKeyInput");
-  const key = input ? input.value.trim() : "";
-  if (key.length >= 6) {
-    localStorage.setItem("budget_sentinel_pro_license", key);
-    localStorage.setItem("agent_budget_pro", key);
-    localStorage.setItem("zoth_budget_licensed", "true");
-    localStorage.setItem("pro_licensed", "true");
-    activateProState();
-    showToast("✓ Sovereign Pro License Verified! All Advanced Guardrails & Export Modes Unlocked.");
-  } else {
-    showToast("Please enter a valid license key or receipt email (min 6 characters).");
   }
 }
 
