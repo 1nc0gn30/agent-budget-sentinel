@@ -101,9 +101,9 @@ footer a:focus-visible {
 }
 
 .btn-outline:hover {
-  background: rgba(212, 175, 55, 0.08);
+  background: rgba(212, 175, 55, 0.10);
   border-color: var(--gold, #D4AF37);
-  color: #FFFFFF;
+  color: var(--text-strong);
 }
 
 .btn-solana:hover {
@@ -165,20 +165,20 @@ footer a {
 }
 
 footer a:hover {
-  color: #F1F5F9;
+  color: var(--text-strong);
   text-decoration: underline;
 }
 
 /* 3. EMPTY STATE PRESENTATION */
 .empty-cell {
   text-align: center;
-  color: #94A3B8;
+  color: var(--text-muted);
   font-family: var(--font-mono, monospace);
   font-size: 0.82rem;
   letter-spacing: 0.04em;
-  padding: 2.75rem 1.25rem;
-  background: rgba(16, 17, 24, 0.5);
-  border: 1px dashed rgba(212, 175, 55, 0.25);
+  padding: 2.25rem 1.25rem;
+  background: var(--bg-card-subtle);
+  border: 1px dashed var(--border-card);
   border-radius: 8px;
 }
 
@@ -189,11 +189,13 @@ footer a:hover {
 /* 4. ERROR PRESENTATION */
 .trip-reason-banner {
   border-left: 4px solid var(--ruby, #EF4444);
-  background: linear-gradient(90deg, rgba(239, 68, 68, 0.22) 0%, rgba(239, 68, 68, 0.08) 100%);
+  background: rgba(239, 68, 68, 0.14);
   border-color: var(--ruby, #EF4444);
-  color: #FCA5A5;
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: var(--ruby, #B91C1C);
   letter-spacing: 0.02em;
+}
+[data-theme="dark"] .trip-reason-banner {
+  color: #FCA5A5;
 }
 
 .form-control:invalid {

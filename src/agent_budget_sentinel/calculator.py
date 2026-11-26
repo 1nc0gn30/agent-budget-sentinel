@@ -22,7 +22,15 @@ class ModelPricing:
 
 # Comprehensive pricing table (Rates per 1M tokens)
 MODEL_PRICING: Dict[str, ModelPricing] = {
-    # OpenAI
+    # OpenAI (2025/2026 + Legacy)
+    "gpt-5": ModelPricing("gpt-5", 1.25, 10.00, "openai"),
+    "gpt-5-mini": ModelPricing("gpt-5-mini", 0.25, 2.00, "openai"),
+    "gpt-4.1": ModelPricing("gpt-4.1", 2.00, 8.00, "openai"),
+    "gpt-4.1-mini": ModelPricing("gpt-4.1-mini", 0.40, 1.60, "openai"),
+    "gpt-4.1-nano": ModelPricing("gpt-4.1-nano", 0.10, 0.40, "openai"),
+    "o3": ModelPricing("o3", 2.00, 8.00, "openai"),
+    "o3-mini": ModelPricing("o3-mini", 1.10, 4.40, "openai"),
+    "o4-mini": ModelPricing("o4-mini", 1.10, 4.40, "openai"),
     "gpt-4o": ModelPricing("gpt-4o", 2.50, 10.00, "openai"),
     "gpt-4o-2024-08-06": ModelPricing("gpt-4o-2024-08-06", 2.50, 10.00, "openai"),
     "gpt-4o-mini": ModelPricing("gpt-4o-mini", 0.15, 0.60, "openai"),
@@ -32,8 +40,13 @@ MODEL_PRICING: Dict[str, ModelPricing] = {
     "o1-mini": ModelPricing("o1-mini", 3.00, 12.00, "openai"),
     "gpt-4-turbo": ModelPricing("gpt-4-turbo", 10.00, 30.00, "openai"),
     "gpt-3.5-turbo": ModelPricing("gpt-3.5-turbo", 0.50, 1.50, "openai"),
-    
-    # Anthropic
+
+    # Anthropic (Claude 4 / 5.5 + 3.5)
+    "claude-opus-5.5": ModelPricing("claude-opus-5.5", 15.00, 75.00, "anthropic"),
+    "claude-sonnet-5.5": ModelPricing("claude-sonnet-5.5", 3.00, 15.00, "anthropic"),
+    "claude-opus-4": ModelPricing("claude-opus-4", 15.00, 75.00, "anthropic"),
+    "claude-sonnet-4": ModelPricing("claude-sonnet-4", 3.00, 15.00, "anthropic"),
+    "claude-haiku-4": ModelPricing("claude-haiku-4", 0.80, 4.00, "anthropic"),
     "claude-3-5-sonnet-20241022": ModelPricing("claude-3-5-sonnet-20241022", 3.00, 15.00, "anthropic"),
     "claude-3-5-sonnet-20240620": ModelPricing("claude-3-5-sonnet-20240620", 3.00, 15.00, "anthropic"),
     "claude-3-5-sonnet": ModelPricing("claude-3-5-sonnet", 3.00, 15.00, "anthropic"),
@@ -42,24 +55,37 @@ MODEL_PRICING: Dict[str, ModelPricing] = {
     "claude-3-opus-20240229": ModelPricing("claude-3-opus-20240229", 15.00, 75.00, "anthropic"),
     "claude-3-opus": ModelPricing("claude-3-opus", 15.00, 75.00, "anthropic"),
     "claude-3-haiku": ModelPricing("claude-3-haiku", 0.25, 1.25, "anthropic"),
-    
-    # Google Gemini
+
+    # Google Gemini (2.5 / 3.8 / 4 + Legacy)
+    "gemini-4-neon": ModelPricing("gemini-4-neon", 1.25, 10.00, "google"),
+    "gemini-3.8-flash": ModelPricing("gemini-3.8-flash", 0.15, 0.60, "google"),
+    "gemini-2.5-pro": ModelPricing("gemini-2.5-pro", 1.25, 10.00, "google"),
+    "gemini-2.5-flash": ModelPricing("gemini-2.5-flash", 0.15, 0.60, "google"),
     "gemini-1.5-pro": ModelPricing("gemini-1.5-pro", 1.25, 5.00, "google"),
     "gemini-1.5-flash": ModelPricing("gemini-1.5-flash", 0.075, 0.30, "google"),
     "gemini-2.0-flash": ModelPricing("gemini-2.0-flash", 0.10, 0.40, "google"),
     "gemini-2.0-flash-exp": ModelPricing("gemini-2.0-flash-exp", 0.10, 0.40, "google"),
-    
+
     # DeepSeek
     "deepseek-chat": ModelPricing("deepseek-chat", 0.14, 0.28, "deepseek"),
     "deepseek-v3": ModelPricing("deepseek-v3", 0.14, 0.28, "deepseek"),
     "deepseek-reasoner": ModelPricing("deepseek-reasoner", 0.55, 2.19, "deepseek"),
     "deepseek-r1": ModelPricing("deepseek-r1", 0.55, 2.19, "deepseek"),
-    
-    # Meta / Open Source
+
+    # Cloud Open-Weights
     "meta-llama/llama-3.3-70b-instruct": ModelPricing("meta-llama/llama-3.3-70b-instruct", 0.40, 0.40, "open-weights"),
     "meta-llama/llama-3.1-8b-instruct": ModelPricing("meta-llama/llama-3.1-8b-instruct", 0.08, 0.08, "open-weights"),
     "meta-llama/llama-3.1-405b-instruct": ModelPricing("meta-llama/llama-3.1-405b-instruct", 2.00, 2.00, "open-weights"),
-    
+
+    # Local Sovereign Loopback Models ($0.00 / 1M tokens)
+    "ollama/local": ModelPricing("ollama/local", 0.00, 0.00, "local-sovereign"),
+    "ollama/qwen2.5-coder": ModelPricing("ollama/qwen2.5-coder", 0.00, 0.00, "local-sovereign"),
+    "ollama/llama3.3": ModelPricing("ollama/llama3.3", 0.00, 0.00, "local-sovereign"),
+    "agy/local": ModelPricing("agy/local", 0.00, 0.00, "local-sovereign"),
+    "hermes/local": ModelPricing("hermes/local", 0.00, 0.00, "local-sovereign"),
+    "azoth/local": ModelPricing("azoth/local", 0.00, 0.00, "local-sovereign"),
+    "deepseek-r1-local": ModelPricing("deepseek-r1-local", 0.00, 0.00, "local-sovereign"),
+
     # Fallback default
     "default": ModelPricing("default", 2.00, 8.00, "general"),
 }
@@ -87,38 +113,63 @@ class CostCalculator:
         normalized = model_name.strip().lower()
         if normalized in MODEL_PRICING:
             return MODEL_PRICING[normalized]
-        
-        # Check sub-string matches
-        for key, pricing in MODEL_PRICING.items():
+
+        # Local sovereign $0.00 models (Ollama, AGY, Hermes, AZOTH, local weights)
+        if (
+            normalized.startswith(("ollama/", "agy/", "hermes/", "azoth/", "local/"))
+            or normalized.endswith("-local")
+            or ("qwen" in normalized and not normalized.startswith("dashscope/"))
+            or ("llama" in normalized and not normalized.startswith("meta-llama/"))
+        ):
+            return ModelPricing(normalized, 0.00, 0.00, "local-sovereign")
+
+        # Check sub-string matches (longest key first to avoid gpt-4o shadowing gpt-4o-mini)
+        for key in sorted(MODEL_PRICING.keys(), key=len, reverse=True):
             if key != "default" and (key in normalized or normalized in key):
-                return pricing
-                
+                return MODEL_PRICING[key]
+
         # Family heuristics
         if "deepseek-reasoner" in normalized or "deepseek-r1" in normalized:
             return MODEL_PRICING["deepseek-reasoner"]
         if "deepseek" in normalized:
             return MODEL_PRICING["deepseek-chat"]
+        if "gpt-5-mini" in normalized:
+            return MODEL_PRICING["gpt-5-mini"]
+        if "gpt-5" in normalized:
+            return MODEL_PRICING["gpt-5"]
+        if "gpt-4.1-nano" in normalized:
+            return MODEL_PRICING["gpt-4.1-nano"]
+        if "gpt-4.1-mini" in normalized:
+            return MODEL_PRICING["gpt-4.1-mini"]
+        if "gpt-4.1" in normalized:
+            return MODEL_PRICING["gpt-4.1"]
         if "gpt-4o-mini" in normalized:
             return MODEL_PRICING["gpt-4o-mini"]
         if "gpt-4o" in normalized:
             return MODEL_PRICING["gpt-4o"]
+        if "o4-mini" in normalized:
+            return MODEL_PRICING["o4-mini"]
+        if "o3-mini" in normalized:
+            return MODEL_PRICING["o3-mini"]
+        if "o3" in normalized:
+            return MODEL_PRICING["o3"]
         if "o1-mini" in normalized:
             return MODEL_PRICING["o1-mini"]
         if "o1" in normalized:
             return MODEL_PRICING["o1"]
         if "haiku" in normalized:
-            return MODEL_PRICING["claude-3-5-haiku"]
+            return MODEL_PRICING["claude-haiku-4"]
         if "sonnet" in normalized:
-            return MODEL_PRICING["claude-3-5-sonnet"]
+            return MODEL_PRICING["claude-sonnet-4"]
         if "opus" in normalized:
-            return MODEL_PRICING["claude-3-opus"]
+            return MODEL_PRICING["claude-opus-4"]
         if "claude" in normalized:
-            return MODEL_PRICING["claude-3-5-sonnet"]
-        if "flash" in normalized:
-            return MODEL_PRICING["gemini-1.5-flash"]
+            return MODEL_PRICING["claude-sonnet-4"]
+        if "gemini-3.8" in normalized or "gemini-2.5-flash" in normalized or "flash" in normalized:
+            return MODEL_PRICING["gemini-3.8-flash"]
         if "gemini" in normalized:
-            return MODEL_PRICING["gemini-1.5-pro"]
-            
+            return MODEL_PRICING["gemini-2.5-pro"]
+
         return MODEL_PRICING["default"]
 
     @staticmethod

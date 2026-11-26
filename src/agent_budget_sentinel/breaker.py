@@ -200,6 +200,44 @@ class CircuitBreaker:
             event_data = self.get_status()
         self._notify("reset", event_data)
 
+    def hydrate_from_storage(self, storage: Any, *, respect_saved_policy: bool = True) -> None:
+        """Hydrate cumulative spend, tokens, request counters, and saved ceilings from SQLite."""
+        agg = storage.get_aggregate_summary()
+        with self._lock:
+            if respect_saved_policy:
+                saved_max = storage.get_setting("max_budget_usd")
+                if saved_max is not None:
+                    try:
+                        val = float(saved_max)
+                        if val > 0:
+                            self.policy.max_budget_usd = val
+                    except ValueError:
+                        pass
+                saved_vel = storage.get_setting("velocity_limit_usd_per_min")
+                if saved_vel is not None:
+                    try:
+                        val = float(saved_vel)
+                        if val >= 0:
+                            self.policy.velocity_limit_usd_per_min = val
+                    except ValueError:
+                        pass
+
+            self.total_spend_usd = round(float(agg.get("total_spend_usd", 0.0)), 6)
+            self.total_prompt_tokens = int(agg.get("total_prompt_tokens", 0))
+            self.total_completion_tokens = int(agg.get("total_completion_tokens", 0))
+            self.total_requests = int(agg.get("total_requests", 0))
+            self.blocked_requests = int(agg.get("blocked_requests", 0))
+
+            if self.total_spend_usd >= self.policy.max_budget_usd:
+                self._trip_locked(
+                    f"Hydrated spend ${self.total_spend_usd:.4f} meets/exceeds ceiling "
+                    f"of ${self.policy.max_budget_usd:.2f}."
+                )
+            elif self.total_spend_usd >= (self.policy.max_budget_usd * self.policy.warn_threshold_pct):
+                self.state = BreakerState.WARN
+            else:
+                self.state = BreakerState.CLOSED
+
     def set_budget(self, max_budget_usd: float) -> None:
         """Update maximum budget ceiling."""
         with self._lock:

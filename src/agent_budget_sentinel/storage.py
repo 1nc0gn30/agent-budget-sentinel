@@ -207,6 +207,56 @@ class BudgetStorage:
             finally:
                 conn.close()
 
+    def get_setting(self, key: str, default: Optional[str] = None) -> Optional[str]:
+        """Read a persisted setting from SQLite."""
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute("SELECT value FROM settings WHERE key = ?", (key,))
+                row = cur.fetchone()
+                return row["value"] if row is not None else default
+            finally:
+                conn.close()
+
+    def set_setting(self, key: str, value: str) -> None:
+        """Upsert a persisted setting in SQLite."""
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                with conn:
+                    conn.execute(
+                        "INSERT INTO settings (key, value) VALUES (?, ?) "
+                        "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                        (key, str(value)),
+                    )
+            finally:
+                conn.close()
+
+    def get_aggregate_summary(self) -> Dict[str, Any]:
+        """Aggregate lifetime spend, tokens, and request counts for restart hydration."""
+        with self._lock:
+            conn = self._get_connection()
+            try:
+                cur = conn.execute("""
+                    SELECT
+                        COALESCE(SUM(CASE WHEN tripped = 0 THEN cost_usd ELSE 0.0 END), 0.0) AS total_spend_usd,
+                        COALESCE(SUM(CASE WHEN tripped = 0 THEN prompt_tokens ELSE 0 END), 0) AS total_prompt_tokens,
+                        COALESCE(SUM(CASE WHEN tripped = 0 THEN completion_tokens ELSE 0 END), 0) AS total_completion_tokens,
+                        COALESCE(SUM(CASE WHEN tripped = 0 THEN 1 ELSE 0 END), 0) AS total_requests,
+                        COALESCE(SUM(CASE WHEN tripped = 1 THEN 1 ELSE 0 END), 0) AS blocked_requests
+                    FROM transactions
+                """)
+                row = cur.fetchone()
+                return {
+                    "total_spend_usd": round(float(row["total_spend_usd"] or 0.0), 6),
+                    "total_prompt_tokens": int(row["total_prompt_tokens"] or 0),
+                    "total_completion_tokens": int(row["total_completion_tokens"] or 0),
+                    "total_requests": int(row["total_requests"] or 0),
+                    "blocked_requests": int(row["blocked_requests"] or 0),
+                }
+            finally:
+                conn.close()
+
     def clear_history(self) -> None:
         """Purge historical transactions."""
         with self._lock:

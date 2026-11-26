@@ -243,6 +243,10 @@ class TestStreamingGuillotine(unittest.TestCase):
         cls.mock_port = 19181
         cls.proxy_port = 19182
         cls.anthropic_mock_port = 19183
+        cls._prev_allow = os.environ.get("AGENT_BUDGET_ALLOW_LOCAL_UPSTREAMS")
+        os.environ["AGENT_BUDGET_ALLOW_LOCAL_UPSTREAMS"] = (
+            f"127.0.0.1:{cls.mock_port},127.0.0.1:{cls.anthropic_mock_port}"
+        )
 
         cls.mock_server = http.server.HTTPServer(("127.0.0.1", cls.mock_port), MockStreamingLLM)
         cls.anthropic_mock_server = http.server.HTTPServer(("127.0.0.1", cls.anthropic_mock_port), MockAnthropicStreamingLLM)
@@ -277,6 +281,10 @@ class TestStreamingGuillotine(unittest.TestCase):
         cls.anthropic_mock_server.shutdown()
         cls.anthropic_mock_server.server_close()
         cls.tmp_dir.cleanup()
+        if cls._prev_allow is None:
+            os.environ.pop("AGENT_BUDGET_ALLOW_LOCAL_UPSTREAMS", None)
+        else:
+            os.environ["AGENT_BUDGET_ALLOW_LOCAL_UPSTREAMS"] = cls._prev_allow
 
     def setUp(self):
         self.breaker.set_budget(10.00)

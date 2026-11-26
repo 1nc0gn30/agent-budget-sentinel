@@ -7,26 +7,26 @@
    - Strict prefers-reduced-motion support
    ========================================================================== */
 
-/* 1. TYPE HIERARCHY & TABULAR DATA PRECISION */
+/* 1. TYPE HIERARCHY & TABULAR DATA PRECISION (Theme-Aware Tokens) */
 .card-title {
   font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: #F1F5F9;
+  color: var(--text-strong);
 }
 
 .metric-large {
   font-variant-numeric: tabular-nums lining-nums;
   font-feature-settings: "tnum" 1, "zero" 1;
   letter-spacing: -0.02em;
-  color: #FFFFFF;
+  color: var(--text-strong);
 }
 
 .metric-sub {
   font-size: 0.72rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #94A3B8;
+  color: var(--text-dim);
   font-weight: 600;
 }
 
@@ -40,7 +40,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #CBD5E1;
+  color: var(--text-muted);
   margin-bottom: 0.45rem;
 }
 
@@ -55,8 +55,8 @@ th {
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.07em;
-  color: #94A3B8;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border-card);
   padding: 0.85rem 0.85rem;
 }
 
@@ -64,11 +64,11 @@ td {
   font-variant-numeric: tabular-nums lining-nums;
   font-feature-settings: "tnum" 1, "zero" 1;
   padding: 0.8rem 0.85rem;
-  color: #E2E8F0;
+  color: var(--text-main);
 }
 
 tbody tr:hover td {
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--bg-card-subtle);
 }
 
 /* 2. HIGH-CONTRAST ACCESSIBLE VISIBLE FOCUS */

@@ -15,105 +15,135 @@ import urllib.parse
 import urllib.request
 from typing import Any, Dict, Optional, Tuple
 
-from .breaker import BreakerState, CircuitBreaker
+from .breaker import CircuitBreaker
 from .calculator import CostCalculator
+from .net_guard import is_local_origin, validate_upstream_url
 from .storage import BudgetStorage, TransactionRecord
 
-
-def _is_local_origin(origin) -> bool:
-    """Browser Origin check. No Origin header = non-browser client (CLI/agent): allowed.
-    Otherwise only http(s)://localhost / 127.0.0.1 / [::1] pages may call this API, so a
-    random website can't drive the local server from the user's browser (CSRF)."""
-    if not origin:
-        return True
-    from urllib.parse import urlparse
-    try:
-        u = urlparse(origin)
-    except ValueError:
-        return False
-    return u.scheme in ("http", "https") and u.hostname in ("localhost", "127.0.0.1", "::1")
+PROXY_VERSION = "2.6.0"
 
 
-def _cors_origin(handler) -> str:
+def _is_local_origin(origin: Optional[str]) -> bool:
+    """Strict loopback Origin check (delegates to net_guard.is_local_origin)."""
+    return is_local_origin(origin)
+
+
+def _cors_origin(handler: http.server.BaseHTTPRequestHandler) -> Optional[str]:
     origin = handler.headers.get("Origin")
-    return origin if origin and _is_local_origin(origin) else "http://127.0.0.1"
+    if origin and _is_local_origin(origin):
+        return origin.strip()
+    return None
 
 
 logger = logging.getLogger("agent_budget_sentinel.proxy")
 
 
 class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
-    """Intercepts LLM API calls, evaluates token budgets, trips circuit breaker, or tallies cost."""
+    """Intercepts LLM API calls, enforces SSRF/CORS/budget guardrails, trips breaker, or tallies cost."""
 
     server: BudgetProxyServer
 
     def log_message(self, format: str, *args: Any) -> None:
-        # Keep terminal clean and quiet
         pass
 
+    def _send_security_headers(self, *, include_cors: bool = True) -> None:
+        self.send_header("Vary", "Origin")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        if include_cors:
+            allowed_origin = _cors_origin(self)
+            if allowed_origin:
+                self.send_header("Access-Control-Allow-Origin", allowed_origin)
+
+    def _send_json_error(self, status: int, code: str, message: str, *, include_cors: bool = True) -> None:
+        body = json.dumps({"error": {"code": code, "message": message}}, indent=2).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self._send_security_headers(include_cors=include_cors)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _reject_foreign_origin(self) -> bool:
+        origin = self.headers.get("Origin")
+        if origin and not _is_local_origin(origin):
+            self._send_json_error(403, "cross_origin_blocked", "cross-origin request blocked", include_cors=False)
+            return True
+        return False
+
     def do_OPTIONS(self) -> None:
-        """Handle CORS preflight requests."""
-        self.send_response(200)
-        self.send_header("Access-Control-Allow-Origin", _cors_origin(self))
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "*")
+        """Handle CORS preflight requests strictly."""
+        if self._reject_foreign_origin():
+            return
+        self.send_response(204)
+        self._send_security_headers(include_cors=True)
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Target-Url, X-Token-Budget, x-api-key")
+        self.send_header("Access-Control-Max-Age", "600")
         self.end_headers()
 
     def do_GET(self) -> None:
-        """Health and proxy info endpoint."""
+        """Health endpoint or circuit-breaker + SSRF guarded GET forward."""
+        if self._reject_foreign_origin():
+            return
+
         if self.path in ("/health", "/", "/status"):
             status = self.server.breaker.get_status()
             resp = json.dumps({
                 "service": "agent-budget-sentinel-proxy",
+                "version": PROXY_VERSION,
                 "status": "healthy",
                 "port": self.server.server_port,
-                "circuit_breaker": status
+                "circuit_breaker": status,
             }, indent=2).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", _cors_origin(self))
+            self._send_security_headers(include_cors=True)
             self.send_header("Content-Length", str(len(resp)))
             self.end_headers()
             self.wfile.write(resp)
             return
 
+        client_ip = self.client_address[0] if self.client_address else "127.0.0.1"
+        allowed, _state, reason = self.server.breaker.evaluate_request(0.0)
+        if not allowed:
+            self._send_breaker_rejection("unknown", 0, client_ip, reason)
+            return
+
         self._handle_forward()
 
     def do_POST(self) -> None:
-        if not _is_local_origin(self.headers.get("Origin")):
-            _body = b'{"error": "cross-origin request blocked"}'
-            self.send_response(403)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Content-Length", str(len(_body)))
-            self.end_headers()
-            self.wfile.write(_body)
+        """Evaluate origin, budget, SSRF guard, trip circuit if breached, or proxy upstream."""
+        if self._reject_foreign_origin():
             return
-        """Evaluate budget, trip circuit if breached, or proxy upstream."""
-        content_length = int(self.headers.get("Content-Length", 0))
+
+        try:
+            content_length = int(self.headers.get("Content-Length", 0))
+        except ValueError:
+            self._send_json_error(400, "invalid_content_length", "Invalid Content-Length header.")
+            return
         body_bytes = self.rfile.read(content_length) if content_length > 0 else b""
 
-        # Attempt to parse body as JSON
         payload: Dict[str, Any] = {}
         try:
             if body_bytes:
-                payload = json.loads(body_bytes.decode("utf-8", errors="replace"))
+                parsed_json = json.loads(body_bytes.decode("utf-8", errors="replace"))
+                if isinstance(parsed_json, dict):
+                    payload = parsed_json
         except Exception:
             payload = {}
 
-        model = payload.get("model", "unknown")
-        # Estimate prompt tokens and projected cost
+        model = str(payload.get("model") or "unknown")
         estimated_prompt_tokens = CostCalculator.estimate_payload_tokens(payload)
         is_stream = bool(payload.get("stream", False)) or "text/event-stream" in self.headers.get("Accept", "")
         completion_est = 1 if is_stream else 500
         projected_cost = CostCalculator.calculate_cost_usd(model, estimated_prompt_tokens, completion_tokens=completion_est)
 
-        # 1. Circuit Breaker Evaluation
-        allowed, state, reason = self.server.breaker.evaluate_request(projected_cost)
-        
         client_ip = self.client_address[0] if self.client_address else "127.0.0.1"
 
+        # 1. Circuit Breaker Evaluation
+        allowed, _state, reason = self.server.breaker.evaluate_request(projected_cost)
         if not allowed:
-            # CIRCUIT BREAKER TRIPPED — BLOCK CALL
             self._send_breaker_rejection(model, estimated_prompt_tokens, client_ip, reason)
             return
 
@@ -122,7 +152,6 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
             self._forward_streaming_upstream(body_bytes, payload, model, estimated_prompt_tokens, client_ip)
             return
 
-        # 3. Forward Upstream (non-streaming)
         self._forward_upstream(body_bytes, payload, model, estimated_prompt_tokens, client_ip)
 
     def _send_breaker_rejection(
@@ -130,12 +159,11 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
         model: str,
         estimated_tokens: int,
         client_ip: str,
-        reason: str
+        reason: str,
     ) -> None:
         """Reject request with HTTP 429 Too Many Requests."""
         status = self.server.breaker.get_status()
-        
-        # Log to SQLite
+
         record = TransactionRecord(
             id=None,
             timestamp="",
@@ -148,7 +176,7 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
             path=self.path,
             source_ip=client_ip,
             tripped=True,
-            reason=reason
+            reason=reason,
         )
         self.server.storage.record_transaction(record)
 
@@ -167,7 +195,7 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
 
         self.send_response(429)
         self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", _cors_origin(self))
+        self._send_security_headers(include_cors=True)
         self.send_header("X-Budget-State", "TRIPPED")
         self.send_header("X-Budget-Spend", f"{status['current_spend_usd']:.6f}")
         self.send_header("X-Budget-Limit", f"{status['max_budget_usd']:.2f}")
@@ -175,21 +203,26 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(resp_bytes)
 
-    def _resolve_upstream_url(self) -> str:
-        """Determine destination URL."""
-        # 1. Custom override header
+    def _resolve_upstream_url(self) -> Tuple[str, bool]:
+        """Determine destination URL and whether it came from operator-configured upstream_base."""
         custom_target = self.headers.get("X-Target-Url") or self.headers.get("x-target-url")
         if custom_target:
-            return custom_target.rstrip("/") + self.path
+            return custom_target.strip().rstrip("/") + self.path, False
 
-        # 2. Check server configured upstream base
         if self.server.upstream_base:
-            return self.server.upstream_base.rstrip("/") + self.path
+            return self.server.upstream_base.strip().rstrip("/") + self.path, True
 
-        # 3. Default fallback based on path
         if "anthropic" in self.path or "messages" in self.path:
-            return "https://api.anthropic.com" + self.path
-        return "https://api.openai.com" + self.path
+            return "https://api.anthropic.com" + self.path, False
+        return "https://api.openai.com" + self.path, False
+
+    def _resolve_and_guard_upstream(self) -> Optional[str]:
+        target_url, is_configured = self._resolve_upstream_url()
+        ok, reason = validate_upstream_url(target_url, allow_configured_local=is_configured)
+        if not ok:
+            self._send_json_error(403, "upstream_ssrf_blocked", f"Blocked upstream URL: {reason}")
+            return None
+        return target_url
 
     def _forward_upstream(
         self,
@@ -197,36 +230,39 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
         payload: Dict[str, Any],
         model: str,
         estimated_prompt_tokens: int,
-        client_ip: str
+        client_ip: str,
     ) -> None:
-        target_url = self._resolve_upstream_url()
-        t0 = time.time()
+        target_url = self._resolve_and_guard_upstream()
+        if target_url is None:
+            return
 
-        # Build forward request
-        req = urllib.request.Request(target_url, data=body_bytes if self.command == "POST" else None, method=self.command)
-        
-        # Copy headers (excluding hop-by-hop headers)
+        t0 = time.time()
+        req = urllib.request.Request(
+            target_url,
+            data=body_bytes if self.command == "POST" else None,
+            method=self.command,
+        )
+
         for key, val in self.headers.items():
             k_lower = key.lower()
             if k_lower in ("host", "content-length", "x-target-url", "connection", "keep-alive"):
                 continue
             req.add_header(key, val)
 
-        # Set default host header
         parsed_target = urllib.parse.urlparse(target_url)
         req.add_header("Host", parsed_target.netloc)
 
         upstream_status = 502
         resp_bytes = b""
-        resp_headers = {}
+        resp_headers: Dict[str, str] = {}
 
         try:
             with urllib.request.urlopen(req, timeout=30.0) as resp:
-                upstream_status = resp.status
+                upstream_status = int(resp.status) if resp.status is not None else 502
                 resp_bytes = resp.read()
                 resp_headers = dict(resp.headers)
         except urllib.error.HTTPError as e:
-            upstream_status = e.code
+            upstream_status = int(e.code) if e.code is not None else 502
             resp_bytes = e.read()
             resp_headers = dict(e.headers)
         except Exception as e:
@@ -235,14 +271,13 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
                 "error": {
                     "message": f"agent-budget-sentinel proxy error forwarding upstream: {str(e)}",
                     "type": "proxy_error",
-                    "code": "upstream_unreachable"
+                    "code": "upstream_unreachable",
                 }
             }
             resp_bytes = json.dumps(err_obj).encode("utf-8")
 
         latency_ms = round((time.time() - t0) * 1000.0, 2)
 
-        # Parse actual usage if available
         prompt_tokens = estimated_prompt_tokens
         completion_tokens = 0
         try:
@@ -251,10 +286,8 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
             if actual_usage:
                 prompt_tokens, completion_tokens = actual_usage
             elif upstream_status == 200:
-                # Estimate completion tokens from response text
                 text_content = ""
-                choices = resp_json.get("choices", [])
-                for ch in choices:
+                for ch in resp_json.get("choices", []):
                     if "message" in ch and "content" in ch["message"]:
                         text_content += ch["message"]["content"] or ""
                     elif "text" in ch:
@@ -263,16 +296,13 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
         except Exception:
             pass
 
-        # Calculate exact cost
         cost_usd = CostCalculator.calculate_cost_usd(model, prompt_tokens, completion_tokens)
-        
-        # Record spend in Circuit Breaker
+
         if upstream_status < 400:
             new_state = self.server.breaker.record_spend(cost_usd, prompt_tokens, completion_tokens, model)
         else:
             new_state = self.server.breaker.state
 
-        # Log transaction
         record = TransactionRecord(
             id=None,
             timestamp="",
@@ -285,21 +315,22 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
             path=self.path,
             source_ip=client_ip,
             tripped=False,
-            reason=None
+            reason=None,
         )
         self.server.storage.record_transaction(record)
 
         status_snap = self.server.breaker.get_status()
 
-        # Send response back to client
         self.send_response(upstream_status)
         for h_key, h_val in resp_headers.items():
-            if h_key.lower() in ("content-length", "transfer-encoding", "connection", "content-encoding"):
+            if h_key.lower() in (
+                "content-length", "transfer-encoding", "connection",
+                "content-encoding", "access-control-allow-origin",
+            ):
                 continue
             self.send_header(h_key, h_val)
 
-        # Budget Sentinel Telemetry Headers
-        self.send_header("Access-Control-Allow-Origin", _cors_origin(self))
+        self._send_security_headers(include_cors=True)
         self.send_header("X-Budget-State", new_state.value)
         self.send_header("X-Budget-Cost-USD", f"{cost_usd:.6f}")
         self.send_header("X-Budget-Spend-USD", f"{status_snap['current_spend_usd']:.6f}")
@@ -316,16 +347,18 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
         payload: Dict[str, Any],
         model: str,
         estimated_prompt_tokens: int,
-        client_ip: str
+        client_ip: str,
     ) -> None:
         """Stream SSE chunks in real time and enforce mid-flight budget / token limits."""
-        target_url = self._resolve_upstream_url()
-        t0 = time.time()
+        target_url = self._resolve_and_guard_upstream()
+        if target_url is None:
+            return
 
+        t0 = time.time()
         req = urllib.request.Request(
             target_url,
             data=body_bytes if self.command == "POST" else None,
-            method=self.command
+            method=self.command,
         )
 
         for key, val in self.headers.items():
@@ -337,7 +370,6 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
         parsed_target = urllib.parse.urlparse(target_url)
         req.add_header("Host", parsed_target.netloc)
 
-        # Resolve query token budget from headers, payload, or policy
         query_token_budget: Optional[int] = None
         for h in ("X-Token-Budget", "x-token-budget", "X-Query-Budget", "x-query-budget", "X-Max-Tokens", "x-max-tokens"):
             if h in self.headers:
@@ -364,48 +396,44 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
 
         try:
             resp = urllib.request.urlopen(req, timeout=30.0)
-            upstream_status = resp.status
+            upstream_status = int(resp.status) if resp.status is not None else 502
         except urllib.error.HTTPError as e:
-            upstream_status = e.code
+            upstream_status = int(e.code) if e.code is not None else 502
             resp_bytes = e.read()
             self.send_response(upstream_status)
             for h_key, h_val in e.headers.items():
-                if h_key.lower() in ("content-length", "transfer-encoding", "connection", "content-encoding"):
+                if h_key.lower() in (
+                    "content-length", "transfer-encoding", "connection",
+                    "content-encoding", "access-control-allow-origin",
+                ):
                     continue
                 self.send_header(h_key, h_val)
-            self.send_header("Access-Control-Allow-Origin", _cors_origin(self))
+            self._send_security_headers(include_cors=True)
             self.send_header("Content-Length", str(len(resp_bytes)))
             self.end_headers()
             self.wfile.write(resp_bytes)
             return
         except Exception as e:
-            err_obj = {
-                "error": {
-                    "message": f"agent-budget-sentinel proxy error forwarding upstream: {str(e)}",
-                    "type": "proxy_error",
-                    "code": "upstream_unreachable"
-                }
-            }
-            resp_bytes = json.dumps(err_obj).encode("utf-8")
-            self.send_response(502)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", _cors_origin(self))
-            self.send_header("Content-Length", str(len(resp_bytes)))
-            self.end_headers()
-            self.wfile.write(resp_bytes)
+            self._send_json_error(
+                502,
+                "upstream_unreachable",
+                f"agent-budget-sentinel proxy error forwarding upstream: {str(e)}",
+            )
             return
 
-        # Upstream succeeded. Forward SSE response headers.
         self.send_response(upstream_status)
         for h_key, h_val in resp.headers.items():
-            if h_key.lower() in ("content-length", "transfer-encoding", "connection", "content-encoding"):
+            if h_key.lower() in (
+                "content-length", "transfer-encoding", "connection",
+                "content-encoding", "access-control-allow-origin",
+            ):
                 continue
             self.send_header(h_key, h_val)
 
         self.send_header("Content-Type", "text/event-stream")
         self.send_header("Cache-Control", "no-cache")
         self.send_header("Connection", "close")
-        self.send_header("Access-Control-Allow-Origin", _cors_origin(self))
+        self._send_security_headers(include_cors=True)
         self.send_header("X-Budget-State", self.server.breaker.state.value)
         self.end_headers()
         self.close_connection = True
@@ -426,8 +454,7 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
                         try:
                             chunk_obj = json.loads(data_payload.decode("utf-8", errors="replace"))
                             delta_text = ""
-                            choices = chunk_obj.get("choices", [])
-                            for ch in choices:
+                            for ch in chunk_obj.get("choices", []):
                                 delta = ch.get("delta", {})
                                 if "content" in delta and delta["content"]:
                                     delta_text += delta["content"]
@@ -444,12 +471,13 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
                         except Exception:
                             pass
 
-                        # Evaluate mid-stream budget conditions:
                         token_budget_exceeded = False
                         if query_token_budget is not None and query_token_budget > 0:
                             if accumulated_completion_tokens >= query_token_budget:
                                 token_budget_exceeded = True
-                            elif query_token_budget > estimated_prompt_tokens and (estimated_prompt_tokens + accumulated_completion_tokens) >= query_token_budget:
+                            elif query_token_budget > estimated_prompt_tokens and (
+                                estimated_prompt_tokens + accumulated_completion_tokens
+                            ) >= query_token_budget:
                                 token_budget_exceeded = True
 
                         current_cost = CostCalculator.calculate_cost_usd(
@@ -471,7 +499,6 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
                 if tripped_mid_stream:
                     break
         finally:
-            # IMMEDIATELY sever upstream TCP connection
             try:
                 if hasattr(resp, "fp") and resp.fp:
                     resp.fp.close()
@@ -485,16 +512,14 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
         )
 
         if tripped_mid_stream:
-            # 1. Record partial spend and trip circuit breaker state
             self.server.breaker.record_spend(
                 stream_cost, estimated_prompt_tokens, accumulated_completion_tokens, model
             )
             self.server.breaker.trip(trip_reason)
 
-            # 2. Emit terminal SSE error event
             terminal_event = (
                 b"event: circuit_breaker_trip\n"
-                b"data: {\"error\": \"Budget limit exceeded mid-stream. Circuit breaker tripped.\"}\n\n"
+                b'data: {"error": "Budget limit exceeded mid-stream. Circuit breaker tripped."}\n\n'
             )
             try:
                 self.wfile.write(terminal_event)
@@ -502,7 +527,6 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
             except (BrokenPipeError, ConnectionResetError):
                 pass
 
-            # 3. Log transaction
             record = TransactionRecord(
                 id=None,
                 timestamp="",
@@ -515,7 +539,7 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
                 path=self.path,
                 source_ip=client_ip,
                 tripped=True,
-                reason=trip_reason
+                reason=trip_reason,
             )
             self.server.storage.record_transaction(record)
         else:
@@ -536,13 +560,15 @@ class BudgetProxyHandler(http.server.BaseHTTPRequestHandler):
                 path=self.path,
                 source_ip=client_ip,
                 tripped=False,
-                reason=None
+                reason=None,
             )
             self.server.storage.record_transaction(record)
 
     def _handle_forward(self) -> None:
-        """Handle GET forwards if requested."""
-        self._forward_upstream(b"", {}, "unknown", 0, self.client_address[0] if self.client_address else "127.0.0.1")
+        """Handle GET forwards with SSRF & circuit-breaker protection."""
+        self._forward_upstream(
+            b"", {}, "unknown", 0, self.client_address[0] if self.client_address else "127.0.0.1"
+        )
 
 
 class BudgetProxyServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
@@ -557,7 +583,7 @@ class BudgetProxyServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
         port: int,
         breaker: CircuitBreaker,
         storage: BudgetStorage,
-        upstream_base: Optional[str] = None
+        upstream_base: Optional[str] = None,
     ):
         self.breaker = breaker
         self.storage = storage

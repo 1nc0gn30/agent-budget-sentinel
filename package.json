@@ -1,6 +1,6 @@
 {
   "name": "agent-budget-sentinel",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "description": "Zero-dependency spending guardrail, real-time token cost circuit breaker, and runaway loop interceptor for AI agents.",
   "author": "1nc0gn30 (@1nc0gn30) • NullAI",
   "license": "MIT",

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent-budget-sentinel"
-version = "1.0.0"
+version = "2.6.0"
 description = "Autonomous zero-dependency spending guardrail and token cost circuit breaker for AI agents"
 authors = [{ name = "1nc0gn30 • NullAI", email = "1nc0gn30@users.noreply.github.com" }]
 readme = "README.md"
